@@ -1,0 +1,1339 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>La transition — Jeu 5</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #EDF1F2; --surface: #FFFFFF; --surface-2: #F6F8F9; --ink: #15202B; --muted: #566572; --line: #CFD8DD;
+  --elec: #0E7C9E; --elec-soft: #D5ECF3; --fossil: #8A5A2B; --fossil-soft: #F1E6DA;   --alert: #B3261E; --alert-soft: #F8E1DF; --ok: #2E7D4F;
+  color-scheme: light;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F161C; --surface: #17212A; --surface-2: #1D2933; --ink: #E6EDF2; --muted: #93A3B0; --line: #2C3A46;
+    --elec: #3CB4D6; --elec-soft: #143845; --fossil: #C9945E; --fossil-soft: #3A2A1B;     --alert: #EF6B5E; --alert-soft: #45201C; --ok: #5FC28A;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F161C; --surface: #17212A; --surface-2: #1D2933; --ink: #E6EDF2; --muted: #93A3B0; --line: #2C3A46;
+  --elec: #3CB4D6; --elec-soft: #143845; --fossil: #C9945E; --fossil-soft: #3A2A1B;   --alert: #EF6B5E; --alert-soft: #45201C; --ok: #5FC28A;
+  color-scheme: dark;
+}
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: "Archivo", "Arial Narrow", Arial, sans-serif; font-size: 16px; line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+}
+.wrap { max-width: 1180px; margin: 0 auto; padding: 20px 18px 48px; }
+h1, h2, h3 { margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(1.9rem, 4vw, 2.6rem); font-weight: 800; font-stretch: 75%; letter-spacing: -0.01em; }
+h2 { font-size: 1.25rem; font-weight: 700; font-stretch: 85%; }
+h3 { font-size: 1rem; font-weight: 700; }
+p { margin: 0 0 .6em; }
+.muted { color: var(--muted); }
+.small { font-size: .875rem; }
+button, input, select { font: inherit; color: inherit; }
+button {
+  border: 1px solid var(--line); background: var(--surface); padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600;
+}
+button.primary { background: var(--elec); border-color: var(--elec); color: #fff; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--elec); outline-offset: 2px; }
+input[type=number], select { border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 6px 8px; min-width: 0; }
+input[type=number] { width: 7.5em; }
+label { display: block; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+.grid { display: grid; gap: 16px; }
+.grid > * { min-width: 0; }
+@media (min-width: 900px) { .cols-2 { grid-template-columns: 1.35fr 1fr; } .cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* En-tête */
+.top { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+.top .sub { font-stretch: 90%; color: var(--muted); }
+
+/* La ligne du réseau : élément central */
+.reseau { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin-bottom: 16px; }
+.reseau-tete { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.charge { position: relative; height: 34px; margin: 14px 0 6px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.charge .remplissage { position: absolute; inset: 0 auto 0 0; background: repeating-linear-gradient(90deg, var(--elec) 0 10px, color-mix(in srgb, var(--elec) 82%, transparent) 10px 12px); transition: width .5s ease; }
+.charge.surcharge .remplissage { background: repeating-linear-gradient(90deg, var(--alert) 0 10px, color-mix(in srgb, var(--alert) 82%, transparent) 10px 12px); }
+.charge .limite { position: absolute; top: -4px; bottom: -4px; width: 3px; background: var(--ink); }
+.charge .etiquette { position: absolute; inset: 0; display: flex; align-items: center; padding: 0 8px; }
+.charge .etiquette span { background: var(--surface); color: var(--ink); font-weight: 700; font-size: .85rem; padding: 2px 8px; border-radius: 4px; }
+.indicateurs { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 18px; margin-top: 12px; }
+.ind .val { font-size: 1.6rem; font-weight: 800; font-stretch: 70%; line-height: 1.05; }
+.ind .lab { font-size: .85rem; color: var(--muted); }
+.ind.elec .val { color: var(--elec); } .ind.fossil .val { color: var(--fossil); }
+.evenement { margin-top: 12px; padding: 10px 12px; border-left: 4px solid var(--alert); background: var(--alert-soft); border-radius: 4px; }
+
+/* Onglets entreprises */
+.onglets { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.onglets button[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+/* Opérations */
+.ops { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin: 12px 0 4px; }
+.op { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: var(--fossil-soft); }
+.op.electrifiee { background: var(--elec-soft); }
+.op .etat { font-size: .8rem; font-weight: 700; color: var(--fossil); }
+.op.electrifiee .etat { color: var(--elec); }
+.op dl { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; margin: 6px 0 0; font-size: .85rem; }
+.op dt { color: var(--muted); } .op dd { margin: 0; text-align: right; font-weight: 600; }
+
+.bloc { border-top: 1px solid var(--line); padding-top: 14px; margin-top: 14px; }
+.ligne { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-end; }
+.ligne label { font-size: .875rem; color: var(--muted); }
+.ligne label > input, .ligne label > select { display: block; margin-top: 4px; color: var(--ink); }
+.radio { display: flex; gap: 14px; flex-wrap: wrap; }
+.radio label { display: flex; gap: 6px; align-items: center; color: var(--ink); font-size: .95rem; }
+.note { font-size: .875rem; padding: 8px 10px; border-radius: 6px; background: var(--surface-2); margin-top: 8px; }
+.note.ok { background: var(--elec-soft); }
+.note.alerte { background: var(--alert-soft); }
+.estim { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 6px 14px; margin-top: 10px; font-size: .9rem; }
+.estim b { display: block; font-size: 1.1rem; }
+
+/* Tableaux */
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+th, td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font-weight: 700; color: var(--muted); font-size: .8rem; }
+tr.humain td { background: var(--elec-soft); }
+.neg { color: var(--alert); }
+.oui { color: var(--fossil); font-weight: 700; }
+.journal { margin: 0; padding-left: 18px; }
+.journal li { margin-bottom: 4px; }
+.journal .t { color: var(--muted); font-weight: 700; }
+svg text { fill: var(--muted); font-size: 11px; font-family: inherit; }
+
+/* Configuration */
+.config-entreprises { display: grid; gap: 8px; margin: 10px 0; }
+.config-entreprises .rangee { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: center; }
+details summary { cursor: pointer; font-weight: 700; margin: 8px 0; }
+.params { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 16px; }
+.params label { font-size: .85rem; color: var(--muted); }
+.params input { display: block; width: 100%; margin-top: 3px; }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; align-items: center; }
+.cache { display: none !important; }
+@media (prefers-reduced-motion: reduce) { .charge .remplissage { transition: none; } }
+.chs { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-top: 10px; }
+.ch { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: var(--fossil-soft); }
+.ch.electrifiee { background: var(--elec-soft); }
+.ch.choisie { outline: 3px solid var(--elec); outline-offset: -3px; }
+.ch .etat { font-size: .8rem; font-weight: 700; color: var(--fossil); }
+.ch.electrifiee .etat, .ch.choisie .etat { color: var(--elec); }
+.ch h3 .small { font-weight: 500; }
+.ch dl { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; margin: 6px 0 0; font-size: .82rem; }
+.ch dt { color: var(--muted); } .ch dd { margin: 0; text-align: right; font-weight: 600; }
+.ch .coche { display: flex; gap: 6px; align-items: center; margin-top: 8px; font-size: .88rem; font-weight: 600; }
+.pos { color: var(--ok); }
+.bilan { border: 2px solid var(--ink); margin-bottom: 16px; }
+.bilan h2 { font-size: 1.45rem; }
+.reseau { margin-top: 0; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+.sources { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin: 8px 0 12px; }
+.sources > div { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: var(--surface); display: flex; flex-direction: column; gap: 2px; }
+.sources .val { font-weight: 800; font-size: 1.1rem; }
+#evSeq select { width: 100%; }
+.etoiles { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+.etoiles button { font-size: 1.7rem; line-height: 1; background: none; border: none; color: var(--line); cursor: pointer; padding: 2px 4px; }
+.etoiles button.pleine { color: var(--fossil); }
+.etoiles button:focus-visible { outline: 3px solid var(--elec); border-radius: 4px; }
+.centre { text-align: center; }
+#toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 8px; max-width: 90vw; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 20; }
+#toast.on { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { #toast { transition: none; } }
+.puces { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-start; margin-top: 8px; }
+.centre .puces { justify-content: center; }
+.puce { border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; background: var(--surface-2); font-size: .9rem; }
+.puce.ok { border-color: var(--ok); color: var(--ok); font-weight: 700; }
+.puce.attente { color: var(--muted); }
+.puce.robot { color: var(--muted); border-style: dashed; }
+button.petit { padding: 4px 8px; font-size: .85rem; }
+button.danger { color: var(--alert); border-color: var(--alert); }
+.soumis { border: 2px solid var(--ok); }
+.onglets { margin-bottom: 14px; }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>La transition</h1>
+      <div class="sub">Jeu 5 : la bourse du carbone</div>
+    </div>
+    <div class="muted small" id="etiquetteTour"></div>
+  </header>
+  <main id="app"><p class="muted">Connexion au jeu…</p></main>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+<script>
+// Moteur du jeu « La transition » — logique pure, sans interface.
+(function (root) {
+  function defaultConfig(n) {
+    return {
+      nbEntreprises: n || 6, nbTours: 10,
+      nbCheminees: 10, prodCheminee: 10, emissionUnite: 1, emissionResiduelle: 0.1,
+      prixMax: 100, pente: 0.3, prixMin: 10,
+      coutBase: 26, carburant: 14, elecParUnite: 18,
+      coutsTransition: [200, 300, 400, 500, 700, 900, 1100, 1400, 1700, 2000],
+      coutChemineeVerte: 1800, coutChemineePolluante: 1500, verteBase: 20, verteElec: 10,
+      allocInitiale: 0.9, baisseAlloc: 0.08,
+      venteGouvInitiale: 0.10, baisseVenteGouv: 0.01,
+      prixPlancher: 10, haussePlancher: 0.10, prixReserve: 60,
+      credit: 5000, taux: 0.05,
+      prixElecBase: 0.7, referenceElecParEntreprise: 500, penteElec: 1,
+      chocCentreDonnees: 0.2, aideFonds: 0.5, eolienHausse: 0.3, eolienDelai: 2,
+      evenements: true, debutEvenements: 3, sequenceEvenements: {},
+    };
+  }
+  // ---------- Événements ----------
+  const EVENEMENTS = {
+    activistes: { nom: "Des activistes achètent des droits", duree: 1,
+      texte: (c, n) => `Un groupe d’activistes du climat achète à l’enchère jusqu’à ${10 * n} droits (l’équivalent de 10 t par entreprise), en offrant jusqu’à 25 % de plus que le dernier prix des droits, puis les retire du marché pour qu’ils ne servent jamais à polluer.`,
+      effet: "Le prix des droits risque de monter : les entreprises qui ont des droits en trop peuvent les vendre plus cher." },
+    cible: { nom: "Une nouvelle cible climatique", duree: 99,
+      texte: () => "Le gouvernement resserre le plafond : chaque entreprise reçoit 10 droits gratuits de moins, pour le reste de la partie.",
+      effet: "Ne rien faire coûtera encore plus cher." },
+    fonds: { nom: "Le Fonds d’électrification", duree: 2,
+      texte: (c) => `Le gouvernement finance ${Math.round(c.aideFonds * 100)} % du coût de transition des cheminées, grâce aux revenus de la bourse du carbone. L’aide s’applique aux conversions décidées ce tour-ci et au prochain.`,
+      effet: "C’est le moment de convertir les cheminées les plus chères." },
+    percee: { nom: "Une percée technologique", duree: 99,
+      texte: () => "Une nouvelle technologie réduit de 30 % le coût de transition des cheminées 6 à 10, pour le reste de la partie.",
+      effet: "Les dernières cheminées deviennent peut-être rentables." },
+    secheresse: { nom: "Une faible hydraulicité", duree: 2,
+      texte: () => "Une sécheresse vide en partie les réservoirs des barrages : la capacité de référence d’Hydro-Québec baisse de 25 %, ce tour-ci et le prochain.",
+      effet: "L’électricité coûtera plus cher." },
+    centre: { nom: "Un centre de données", duree: 2,
+      texte: (c) => `Un grand centre de données se branche au réseau : il consomme l’équivalent de ${Math.round(c.chocCentreDonnees * 100)} % de la capacité de référence d’Hydro-Québec, ce tour-ci et le prochain.`,
+      effet: "L’électricité coûtera plus cher." },
+    petrole: { nom: "Une flambée du prix du pétrole", duree: 2,
+      texte: (c) => `Le prix du carburant passe de ${c.carburant} $ à ${Math.round(c.carburant * 1.5)} $ par unité produite, ce tour-ci et le prochain.`,
+      effet: "Les cheminées au carburant coûtent plus cher à faire fonctionner." },
+    foret: { nom: "Un projet forestier", duree: 1,
+      texte: (c, n) => `Un projet de plantation d’arbres génère des crédits compensatoires : le gouvernement ajoute ${10 * n} droits (l’équivalent de 10 t par entreprise) à son enchère, au prix plancher.`,
+      effet: "Le prix des droits risque de baisser." },
+    eolien: { nom: "Un parc éolien d’Hydro-Québec", duree: 99, condition: "La consommation a dépassé la capacité de référence au tour précédent.",
+      texte: (c, n, t) => `Pour pallier le manque d’énergie, Hydro-Québec lance un projet de parc éolien. Il entrera en service au tour ${t + c.eolienDelai} et augmentera la capacité de référence de ${Math.round(c.eolienHausse * 100)} %, pour le reste de la partie.`,
+      effet: "L’électricité coûtera moins cher une fois le parc en service : faut-il électrifier maintenant ?" },
+    taux: { nom: "Une hausse des taux d’intérêt", duree: 99,
+      texte: (c) => `La banque centrale relève ses taux : l’intérêt sur un solde négatif passe de ${Math.round(c.taux * 100)} % à ${Math.round(c.taux * 200)} % par tour, pour le reste de la partie.`,
+      effet: "Les entreprises endettées paieront deux fois plus d’intérêts." },
+    penurie: { nom: "Une pénurie d’équipements électriques", duree: 1,
+      texte: () => "Les fournisseurs n’arrivent plus à livrer : les cheminées dont l’électrification est décidée ce tour-ci n’entreront en service que dans deux tours au lieu d’un.",
+      effet: "Électrifier maintenant prendra plus de temps à rapporter." },
+    aideVerte: { nom: "Un programme d’aide aux usines vertes", duree: 2,
+      texte: () => "Le gouvernement paie 40 % du coût des cheminées vertes neuves construites ce tour-ci et au prochain.",
+      effet: "Une occasion d’agrandir l’usine proprement, si les autres ne le font pas tous." },
+    exportation: { nom: "Un contrat d’exportation d’électricité", duree: 99,
+      texte: () => "Hydro-Québec signe un contrat pour vendre de l’électricité à un État voisin : la capacité de référence disponible pour les entreprises baisse de 15 %, pour le reste de la partie.",
+      effet: "L’électricité coûtera plus cher." },
+    ralentissement: { nom: "Un ralentissement économique", duree: 2,
+      texte: () => "La demande baisse : le prix de vente maximal du produit diminue de 10 $, ce tour-ci et le prochain.",
+      effet: "Les profits baissent : attention à la marge de crédit." },
+  };
+  const evenementEligible = (p, id) => id !== "eolien" || !!(p.dernier && p.dernier.demande > p.dernier.reference);
+  // Tire l'événement d'un tour au moment où ce tour commence (les conditions dépendent de la partie).
+  function tirerEvenement(p, t) {
+    const c = p.config; if (!c.evenements || t < c.debutEvenements || t > c.nbTours) return;
+    const seq = c.sequenceEvenements || {}, v = seq[t] || "hasard", deja = new Set(Object.values(p.plan));
+    if (v === "aucun") return;
+    if (EVENEMENTS[v] && !deja.has(v) && evenementEligible(p, v)) { p.plan[t] = v; return; }
+    const reserves = new Set(Object.entries(seq).filter(([tt, id]) => +tt > t && EVENEMENTS[id]).map(([, id]) => id));
+    const pool = Object.keys(EVENEMENTS).filter((k) => !deja.has(k) && !reserves.has(k) && k !== v && evenementEligible(p, k));
+    if (pool.length) p.plan[t] = pool[Math.floor(p.aleaEv() * pool.length)];
+  }
+  const evenementDuTour = (p, t) => (p.plan || {})[t] || null;
+  function evenementsActifs(p, t) { return Object.entries(p.plan || {}).filter(([t0, id]) => t >= +t0 && t < +t0 + EVENEMENTS[id].duree).map(([t0, id]) => ({ id, debut: +t0, enService: id !== "eolien" || t >= +t0 + p.config.eolienDelai })); }
+  // Paramètres en vigueur à un tour donné, une fois les événements appliqués
+  function configTour(p, t) {
+    const c = p.config, n = p.entreprises.length;
+    const ce = Object.assign({}, c, { allocDelta: 0, subvention: 0, percee: false, centreActif: false, activistes: null, foret: 0 });
+    evenementsActifs(p, t).forEach(({ id, enService }) => {
+      if (id === "eolien" && enService) ce.referenceElecParEntreprise *= 1 + c.eolienHausse;
+      if (id === "exportation") ce.referenceElecParEntreprise *= 0.85;
+      if (id === "taux") ce.taux = c.taux * 2;
+      if (id === "penurie") ce.penurie = true;
+      if (id === "aideVerte") ce.coutChemineeVerte = Math.round(c.coutChemineeVerte * 0.6);
+      if (id === "petrole") ce.carburant = Math.round(c.carburant * 1.5);
+      if (id === "ralentissement") ce.prixMax = c.prixMax - 10;
+      if (id === "secheresse") ce.referenceElecParEntreprise *= 0.75;
+      if (id === "centre") ce.centreActif = true;
+      if (id === "cible") ce.allocDelta += 10;
+      if (id === "fonds") ce.subvention = c.aideFonds;
+      if (id === "percee") ce.percee = true;
+      if (id === "activistes") ce.activistes = { q: 10 * n, prix: 45 };
+      if (id === "foret") ce.foret = 10 * n;
+    });
+    return ce;
+  }
+  function rng(seed) { const o = { s: seed >>> 0 || 1 }; const f = () => { let s = o.s; s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; o.s = s; return (s % 100000) / 100000; }; f.etat = () => o.s; f.regler = (v) => { o.s = v >>> 0 || 1; }; return f; }
+
+  function nouvellePartie(c, joueurs, seed) {
+    const entreprises = joueurs.map((j, i) => ({
+      id: i, nom: j.nom || "Entreprise " + (i + 1), humain: !!j.humain, strategie: j.strategie || "inactif",
+      cheminees: Array.from({ length: c.nbCheminees }, (_, k) => ({ num: k + 1, type: "fossile", origine: "initiale" })),
+      solde: 0, banque: 0, interetsTotal: 0, historique: [], attente: [],
+    }));
+    const p = { config: c, tour: 1, termine: false, alea: rng(seed || 12345), aleaEv: rng((seed || 12345) * 7 + 3), plan: {}, entreprises, dernier: null, journal: [], series: [] };
+    tirerEvenement(p, 1);
+    return p;
+  }
+
+  // ---------- Calculs ----------
+  const coutTransitionBase = (c, ch) => c.coutsTransition[Math.min(ch.num, c.coutsTransition.length) - 1];
+  const coutTransition = (c, ch) => Math.round(coutTransitionBase(c, ch) * (c.percee && ch.num >= 6 ? 0.7 : 1) * (1 - (c.subvention || 0)));
+  const estNeuve = (c, ch) => ch.origine === "verte" && c.verteElec != null;
+  const elecParUniteCh = (c, ch) => estNeuve(c, ch) ? c.verteElec : c.elecParUnite;
+  const production = (c, e) => e.cheminees.length * c.prodCheminee;
+  const emCheminee = (c, ch) => c.prodCheminee * c.emissionUnite * (ch.type === "elec" ? c.emissionResiduelle : 1);
+  const emissions = (c, e) => e.cheminees.reduce((s, ch) => s + emCheminee(c, ch), 0);
+  const nbElec = (e) => e.cheminees.filter((ch) => ch.type === "elec").length;
+  const consoElec = (c, e) => e.cheminees.reduce((s, ch) => s + (ch.type === "elec" ? c.prodCheminee * elecParUniteCh(c, ch) : 0), 0);
+  const emissionsInitiales = (c) => c.nbCheminees * c.prodCheminee * c.emissionUnite;
+  const plancher = (c, t) => c.prixPlancher * Math.pow(1 + c.haussePlancher, t - 1);
+  const droitsGratuits = (c, t) => Math.max(0, emissionsInitiales(c) * Math.max(0, c.allocInitiale - c.baisseAlloc * (t - 1)) - (c.allocDelta || 0));
+  const venteGouv = (c, t, n) => emissionsInitiales(c) * n * Math.max(0, c.venteGouvInitiale - c.baisseVenteGouv * (t - 1));
+  const centreActif = (c) => !!c.centreActif;
+  const referenceElec = (c, n) => c.referenceElecParEntreprise * n;
+  function demandeElecTotale(p, conso, t) { const c = configTour(p, t || p.tour), n = p.entreprises.length; return conso + (centreActif(c) ? c.chocCentreDonnees * referenceElec(c, n) : 0); }
+  function prixElecPour(c, demande, n) { const ref = referenceElec(c, n); return c.prixElecBase * Math.max(1, 1 + c.penteElec * (demande - ref) / ref); }
+  function prixVentePour(c, qTot, n) { return Math.max(c.prixMin, c.prixMax - c.pente * qTot / n); }
+  function coutUnitaireCheminee(c, ch, prixElec) { return (estNeuve(c, ch) ? c.verteBase : c.coutBase) + (ch.type === "elec" ? elecParUniteCh(c, ch) * prixElec : c.carburant); }
+  function coutsProduction(c, e, prixElec) { return e.cheminees.reduce((s, ch) => s + c.prodCheminee * coutUnitaireCheminee(c, ch, prixElec), 0); }
+  // Gain par tour d'une cheminée électrifiée, aux prix donnés
+  function gainTransition(c, prixElec, prixDroit) { return c.prodCheminee * (c.carburant - c.elecParUnite * prixElec + c.emissionUnite * (1 - c.emissionResiduelle) * prixDroit); }
+  function coutInvestissement(c, e, d) {
+    let total = 0;
+    (d.electrifier || []).forEach((num) => { const ch = e.cheminees.find((x) => x.num === num); if (ch && ch.type === "fossile") total += coutTransition(c, ch); });
+    total += (d.vertes || 0) * c.coutChemineeVerte + (d.polluantes || 0) * c.coutChemineePolluante;
+    return total;
+  }
+  const margeDisponible = (c, e) => e.solde + c.credit;
+
+  // Enchère scellée à prix unique : les acheteurs du prix le plus élevé et les vendeurs du prix le plus bas sont servis en premier.
+  function enchere(achats, ventes) {
+    achats.sort((a, b) => b.prix - a.prix); ventes.sort((a, b) => a.prix - b.prix);
+    let i = 0, j = 0, qa = achats[0] ? achats[0].q : 0, qv = ventes[0] ? ventes[0].q : 0, derA = null, derV = null, volume = 0;
+    while (i < achats.length && j < ventes.length && achats[i].prix >= ventes[j].prix) {
+      const q = Math.min(qa, qv);
+      achats[i].obtenu = (achats[i].obtenu || 0) + q; ventes[j].vendu = (ventes[j].vendu || 0) + q; volume += q;
+      derA = achats[i].prix; derV = ventes[j].prix; qa -= q; qv -= q;
+      if (qa <= 1e-9) { i++; qa = achats[i] ? achats[i].q : 0; }
+      if (qv <= 1e-9) { j++; qv = ventes[j] ? ventes[j].q : 0; }
+    }
+    return { prix: derA == null ? null : Math.round(((derA + derV) / 2) * 100) / 100, volume };
+  }
+
+  // ---------- Résolution d'un tour ----------
+  // decisions[i] = { electrifier: [num], vertes, polluantes, prixAchat, prixVente }
+  function resoudreTour(p, decisions) {
+    const c = configTour(p, p.tour), ents = p.entreprises, n = ents.length, t = p.tour, evenements = [];
+    const evt = evenementDuTour(p, t);
+    if (evt) evenements.push("Événement : " + EVENEMENTS[evt].nom + ". " + EVENEMENTS[evt].texte(p.config, n, t));
+
+    // Investissements : vérification de la marge de crédit
+    const invest = ents.map((e, i) => {
+      const d = decisions[i] || {}; let reste = margeDisponible(c, e), total = 0;
+      const ok = { electrifier: [], vertes: 0, polluantes: 0 };
+      (d.electrifier || []).slice().sort((a, b) => a - b).forEach((num) => {
+        const ch = e.cheminees.find((x) => x.num === num); if (!ch || ch.type !== "fossile" || ch.attente) return;
+        const k = coutTransition(c, ch); if (k <= reste) { reste -= k; total += k; ok.electrifier.push(num); }
+      });
+      for (let k = 0; k < (d.vertes || 0); k++) if (c.coutChemineeVerte <= reste) { reste -= c.coutChemineeVerte; total += c.coutChemineeVerte; ok.vertes++; }
+      for (let k = 0; k < (d.polluantes || 0); k++) if (c.coutChemineePolluante <= reste) { reste -= c.coutChemineePolluante; total += c.coutChemineePolluante; ok.polluantes++; }
+      return { ok, total };
+    });
+
+    // Production, électricité, prix du produit
+    const lignes = ents.map((e, i) => ({ id: i, tour: t, force: !!(decisions[i] || {}).force, texteStrategie: (decisions[i] || {}).texteStrategie || "", confiance: (decisions[i] || {}).confiance || 0, quantite: production(c, e), emissions: emissions(c, e), conso: consoElec(c, e), nbElec: nbElec(e), nbCheminees: e.cheminees.length, soldeDebut: e.solde, banqueDebut: e.banque }));
+    const qTot = lignes.reduce((s, l) => s + l.quantite, 0), prixVente = prixVentePour(c, qTot, n);
+    const conso = lignes.reduce((s, l) => s + l.conso, 0), demande = demandeElecTotale(p, conso, t), prixElec = prixElecPour(c, demande, n);
+
+    // Bourse du carbone
+    const pl = plancher(c, t), gratuits = droitsGratuits(c, t), gouv = venteGouv(c, t, n);
+    const achats = [], ventes = [{ q: gouv, prix: pl, gouv: true }];
+    if (c.foret) ventes.push({ q: c.foret, prix: pl, gouv: true, foret: true });
+    if (c.activistes) { const der = p.dernier && p.dernier.prixDroit != null ? p.dernier.prixDroit : pl; c.activistes.prix = Math.round(Math.min(c.prixReserve - 1, Math.max(pl, der) * 1.25)); achats.push({ q: c.activistes.q, prix: c.activistes.prix, activistes: true }); }
+    lignes.forEach((l) => {
+      const e = ents[l.id], d = decisions[l.id] || {};
+      l.gratuits = gratuits; l.position = gratuits + e.banque - l.emissions;
+      if (l.position < -1e-9) { l.ordre = { q: -l.position, prix: Math.min(c.prixReserve, Math.max(0, +d.prixAchat || pl)), id: l.id }; l.prixOrdre = l.ordre.prix; achats.push(l.ordre); }
+      else if (l.position > 1e-9 && !d.garderDroits) { l.ordre = { q: l.position, prix: Math.max(0, +d.prixVente || pl), id: l.id }; l.prixOrdre = l.ordre.prix; ventes.push(l.ordre); }
+      else if (l.position > 1e-9) l.garde = true;
+    });
+    const res = enchere(achats, ventes), prixDroit = res.prix;
+        const venduGouv = ventes.filter((v) => v.gouv).reduce((x, v) => x + (v.vendu || 0), 0), achatActivistes = achats.filter((a) => a.activistes).reduce((x, a) => x + (a.obtenu || 0), 0);
+    let achatReserveTotal = 0;
+    lignes.forEach((l) => {
+      const e = ents[l.id];
+      l.achetes = 0; l.coutAchats = 0; l.reserve = 0; l.coutReserve = 0; l.vendus = 0; l.revenuVentes = 0; l.perdus = 0;
+      if (l.ordre && l.position < 0) {
+        l.achetes = l.ordre.obtenu || 0; l.coutAchats = l.achetes * (prixDroit || 0);
+        l.reserve = -l.position - l.achetes; l.coutReserve = l.reserve * c.prixReserve; achatReserveTotal += l.reserve;
+        e.banque = 0;
+      } else if (l.position > 1e-9) {
+        l.vendus = l.ordre ? l.ordre.vendu || 0 : 0; l.revenuVentes = l.vendus * (prixDroit || 0);
+        const restant = l.position - l.vendus;
+        if (t >= c.nbTours) { l.perdus = restant; e.banque = 0; } else e.banque = restant;
+      } else e.banque = 0;
+      l.banqueFin = e.banque;
+      l.carbone = l.coutAchats + l.coutReserve - l.revenuVentes;
+    });
+
+    // Profits
+    lignes.forEach((l) => {
+      const e = ents[l.id];
+      l.prixVente = prixVente; l.revenus = l.quantite * prixVente; l.coutsProduction = coutsProduction(c, e, prixElec);
+      l.coutElec = l.nbElec * c.prodCheminee * c.elecParUnite * prixElec; l.coutCarburant = (l.nbCheminees - l.nbElec) * c.prodCheminee * c.carburant; l.coutBase = l.quantite * c.coutBase;
+      l.interets = e.solde < 0 ? -e.solde * c.taux : 0; e.interetsTotal += l.interets;
+      l.investissement = invest[l.id].total;
+      l.profit = l.revenus - l.coutsProduction - l.carbone - l.investissement - l.interets;
+      e.solde += l.profit; l.solde = e.solde;
+      e.historique.push(l);
+    });
+
+    // Effets des investissements : au prochain tour
+    ents.forEach((e, i) => {
+      const ok = invest[i].ok, d = decisions[i] || {};
+      lignes[i].decide = { electrifier: ok.electrifier.slice(), vertes: ok.vertes, polluantes: ok.polluantes };
+      ok.electrifier.forEach((num) => { const ch = e.cheminees.find((x) => x.num === num); if (c.penurie) ch.attente = t + 2; else ch.type = "elec"; });
+      e.cheminees.forEach((ch) => { if (ch.attente && ch.attente <= t + 1 && !ok.electrifier.includes(ch.num)) { ch.type = "elec"; delete ch.attente; } });
+      for (let k = 0; k < ok.vertes; k++) e.cheminees.push({ num: e.cheminees.length + 1, type: "elec", origine: "verte" });
+      for (let k = 0; k < ok.polluantes; k++) e.cheminees.push({ num: e.cheminees.length + 1, type: "fossile", origine: "polluante" });
+      const parts = [];
+      if (ok.electrifier.length) parts.push("électrifie " + (ok.electrifier.length > 1 ? "les cheminées " : "la cheminée ") + ok.electrifier.join(", ") + (c.penurie ? " (en service dans deux tours, à cause de la pénurie)" : ""));
+      if (ok.vertes) parts.push("ajoute " + ok.vertes + " cheminée" + (ok.vertes > 1 ? "s vertes" : " verte"));
+      if (ok.polluantes) parts.push("ajoute " + ok.polluantes + " cheminée" + (ok.polluantes > 1 ? "s polluantes" : " polluante"));
+      if (parts.length) evenements.push(e.nom + " " + parts.join(" et ") + " (effet au prochain tour).");
+      const demande = (d.electrifier || []).length + (d.vertes || 0) + (d.polluantes || 0), fait = ok.electrifier.length + ok.vertes + ok.polluantes;
+      if (fait < demande) evenements.push(e.nom + " n’a pas pu faire tous ses investissements : sa marge de crédit était épuisée.");
+      if (lignes[i].soldeDebut >= 0 && e.solde < 0) evenements.push(e.nom + " passe en déficit (" + Math.round(e.solde).toLocaleString("fr-CA") + " $) : intérêts de " + Math.round(c.taux * 100) + " % par tour.");
+    });
+    if (res.volume > 0) evenements.push(Math.round(res.volume) + " droits échangés à la bourse, au prix de " + prixDroit.toFixed(2).replace(".", ",") + " $/t.");
+    else evenements.push("Aucun échange à la bourse ce tour.");
+    if (achatActivistes > 0) evenements.push("Les activistes ont acheté et retiré " + Math.round(achatActivistes) + " droits.");
+    if (achatReserveTotal > 0) evenements.push(Math.round(achatReserveTotal) + " droits achetés à la réserve du gouvernement, à " + c.prixReserve + " $/t.");
+
+    p.dernier = { tour: t, evenement: evt, achatActivistes, foret: c.foret, prixVente, prixElec, conso, demande, reference: referenceElec(c, n), prixDroit, plancher: pl, gratuits, venteGouv: gouv + (c.foret || 0), venduGouv, volume: res.volume, achatReserve: achatReserveTotal, lignes,
+      emissionsTotales: lignes.reduce((s, l) => s + l.emissions, 0), plafond: gratuits * n + gouv };
+    p.series.push({ tour: t, prixVente, prixElec, demande, reference: referenceElec(c, n), prixDroit, plancher: pl, emissionsTotales: p.dernier.emissionsTotales, plafond: p.dernier.plafond });
+    p.journal.push({ tour: t, evenements });
+    if (t >= c.nbTours) p.termine = true; else { p.tour += 1; tirerEvenement(p, p.tour); }
+    return p.dernier;
+  }
+
+  // ---------- Robots ----------
+  const STRATEGIES = {
+    calculateur: { nom: "Calculateur", desc: "Électrifie une cheminée quand elle est rentable aux prix actuels." },
+    pionnier: { nom: "Pionnier", desc: "Électrifie deux cheminées par tour dès le départ." },
+    graduel: { nom: "Graduel", desc: "Électrifie une cheminée par tour." },
+    tardif: { nom: "Tardif", desc: "Attend la moitié de la partie, puis électrifie trois cheminées par tour." },
+    verte: { nom: "Expansion verte", desc: "Ajoute des cheminées électriques et se convertit peu à peu." },
+    polluante: { nom: "Expansion polluante", desc: "Ajoute des cheminées au carburant." },
+    inactif: { nom: "Inactif", desc: "Ne change rien : sert de point de comparaison." },
+  };
+  function decisionRobot(p, i) {
+    const c = configTour(p, p.tour), e = p.entreprises[i], t = p.tour, r = p.alea, s = e.strategie;
+    const pl = plancher(c, t), dernierPrix = p.dernier && p.dernier.prixDroit != null ? p.dernier.prixDroit : pl, ref = Math.max(pl, dernierPrix);
+    const prixElec = p.dernier ? p.dernier.prixElec : c.prixElecBase;
+    const fossiles = e.cheminees.filter((ch) => ch.type === "fossile" && !ch.attente).sort((a, b) => coutTransition(c, a) - coutTransition(c, b)).map((ch) => ch.num);
+    const d = { electrifier: [], vertes: 0, polluantes: 0,
+      prixAchat: Math.round(Math.min(c.prixReserve, ref + (0.2 + 0.7 * r()) * (c.prixReserve - ref))),
+      prixVente: Math.round(Math.min(c.prixReserve, Math.max(pl, ref * (0.9 + 0.5 * r())))) };
+    if (s === "pionnier" && t <= c.nbTours - 2) d.electrifier = fossiles.slice(0, 2);
+    if (s === "graduel" && t <= c.nbTours - 1) d.electrifier = fossiles.slice(0, 1);
+    if (s === "tardif" && t >= Math.ceil(c.nbTours / 2) && t <= c.nbTours - 1) d.electrifier = fossiles.slice(0, 3);
+    if (s === "calculateur") {
+      const g = gainTransition(c, prixElec, ref);
+      fossiles.forEach((num) => { const ch = e.cheminees.find((x) => x.num === num); if (d.electrifier.length < 3 && g * (c.nbTours - t) > coutTransition(c, ch) * 1.1) d.electrifier.push(num); });
+    }
+    if (s === "polluante" && t <= 3) d.polluantes = 1;
+    if (s === "verte") { if (t <= 3) d.vertes = 1; if (t >= 2 && t <= c.nbTours - 2) d.electrifier = fossiles.slice(0, 1); }
+    return d;
+  }
+
+  const API = { rng, STRATEGIES, EVENEMENTS, evenementEligible, configTour, evenementDuTour, evenementsActifs, coutTransitionBase, estNeuve, elecParUniteCh, defaultConfig, nouvellePartie, resoudreTour, decisionRobot, coutTransition, production, emissions, emCheminee, consoElec, nbElec,
+    plancher, droitsGratuits, venteGouv, centreActif, referenceElec, prixElecPour, prixVentePour, coutsProduction, coutUnitaireCheminee, gainTransition,
+    coutInvestissement, margeDisponible, demandeElecTotale, emissionsInitiales };
+  if (typeof module !== "undefined") module.exports = API; else root.Transition = API;
+})(typeof window !== "undefined" ? window : this);
+</script>
+<script>
+(function () {
+  const T = window.Transition;
+  const $ = (s, r) => (r || document).querySelector(s);
+  const app = $("#app");
+  const fmt = (x, d = 0) => (x == null || isNaN(x)) ? "—" : Number(x).toLocaleString("fr-CA", { minimumFractionDigits: d, maximumFractionDigits: d });
+  const argent = (x) => (x < 0 ? "−" : "") + fmt(Math.abs(Math.round(x))) + " $";
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const STRATS = Object.keys(T.STRATEGIES);
+  const PARAMS = [
+    ["prixPlancher", "Prix plancher des droits au tour 1 ($/t)"], ["haussePlancher", "Hausse du prix plancher par tour (0,1 = 10 %)"], ["prixReserve", "Prix de la réserve du gouvernement ($/t)"],
+    ["allocInitiale", "Droits gratuits au tour 1 (0,9 = 90 % des émissions de départ)"], ["baisseAlloc", "Baisse des droits gratuits par tour (0,08 = 8 points)"],
+    ["venteGouvInitiale", "Vente du gouvernement au tour 1 (0,1 = 10 % des émissions de départ)"], ["baisseVenteGouv", "Baisse de la vente du gouvernement par tour"],
+    ["prixElecBase", "Prix de base de l’électricité ($/unité)"], ["referenceElecParEntreprise", "Capacité de référence d’Hydro-Québec par entreprise (unités)"], ["penteElec", "Hausse du prix de l’électricité au-delà de la référence (1 = +10 % du prix par 10 % de consommation en plus)"],
+    ["chocCentreDonnees", "Événement « centre de données » : consommation (0,2 = 20 % de la référence)"], ["aideFonds", "Événement « Fonds d’électrification » : part payée par le gouvernement (0,5 = 50 %)"],
+    ["eolienHausse", "Événement « parc éolien » : hausse de la capacité de référence (0,3 = 30 %)"], ["eolienDelai", "Événement « parc éolien » : tours avant la mise en service"],
+    ["coutChemineeVerte", "Coût d’une cheminée verte neuve ($)"], ["verteBase", "Coût fixe par unité d’une cheminée verte neuve ($)"], ["verteElec", "Électricité par unité d’une cheminée verte neuve"],
+    ["coutChemineePolluante", "Coût d’une cheminée polluante ($)"],
+    ["credit", "Marge de crédit ($)"], ["taux", "Taux d’intérêt par tour sur un solde négatif (0,05 = 5 %)"],
+    ["prixMax", "Prix de vente maximal du produit ($)"], ["pente", "Baisse du prix par unité moyenne produite ($)"],
+  ];
+  function prixRef() { const c = partie.config, pl = T.plancher(c, partie.tour); return Math.max(pl, partie.dernier && partie.dernier.prixDroit != null ? partie.dernier.prixDroit : pl); }
+  function decisionVide(prec) { const c = partie.config, r = prixRef(); return { electrifier: [], vertes: 0, polluantes: 0, prixAchat: Math.round(Math.min(c.prixReserve, r * 1.3)), prixVente: Math.round(r), garderDroits: !!(prec && prec.garderDroits), texteStrategie: "", confiance: 0 }; }
+  const MIN_STRATEGIE = 15;
+  const strategieComplete = (d) => d && (d.texteStrategie || "").trim().length >= MIN_STRATEGIE && d.confiance >= 1;
+  const etoiles = (k) => "★".repeat(k) + "☆".repeat(5 - k);
+  function variation(v, ancien, inverse) {
+    if (ancien == null) return "";
+    const dlt = Math.round(v - ancien); if (!dlt) return `<span class="muted">stable</span>`;
+    const bon = inverse ? dlt < 0 : dlt > 0;
+    return `<span class="${bon ? "pos" : "neg"}">${dlt > 0 ? "+" : "−"}${fmt(Math.abs(dlt))} $</span>`;
+  }
+  const nomsListe = (l) => l.length <= 1 ? l.join("") : l.slice(0, -1).join(", ") + " et " + l[l.length - 1];
+  function decisionsTexte(l) {
+    const d = l.decide || {}, p = [];
+    if ((d.electrifier || []).length) p.push("électrifie " + (d.electrifier.length > 1 ? "les cheminées " : "la cheminée ") + d.electrifier.join(", "));
+    if (d.vertes) p.push("+" + d.vertes + " verte" + (d.vertes > 1 ? "s" : ""));
+    if (d.polluantes) p.push("+" + d.polluantes + " polluante" + (d.polluantes > 1 ? "s" : ""));
+    return (p.length ? p.join(" ; ") : "aucun investissement") + (l.force ? " (tour forcé)" : "");
+  }
+  function rendreBilan(humains) {
+    const d = partie.dernier;
+    if (!d) return `<section class="card bilan"><h2>Premier tour</h2><p class="muted" style="margin:0">Le bilan de chaque tour apparaîtra ici : tes résultats, les décisions des autres entreprises et les événements. Commence par lire ton bilan carbone et l’état de tes cheminées, plus bas.</p></section>`;
+    const c = partie.config, t = d.tour, prec = partie.series.length > 1 ? partie.series[partie.series.length - 2] : null;
+    const ents = partie.entreprises, L = (e, k) => e.historique[e.historique.length - 1 - (k || 0)];
+    const ev = (partie.journal.find((j) => j.tour === t) || { evenements: [] }).evenements.filter((x) => /^(Événement|Les activistes)/.test(x));
+    // causes des variations de prix
+    const ajouts = ents.filter((e) => prec && L(e) && L(e, 1) && L(e).quantite > L(e, 1).quantite).map((e) => e.nom);
+    const electrifies = ents.filter((e) => prec && L(e) && L(e, 1) && L(e).nbElec > L(e, 1).nbElec).map((e) => e.nom + " (" + (L(e).nbElec - L(e, 1).nbElec) + ")");
+    const marche = [];
+    marche.push(d.prixDroit != null ? `<b>Bourse :</b> ${fmt(d.volume)} droits échangés à <b>${fmt(d.prixDroit, 2)} $/t</b>${prec && prec.prixDroit != null ? ` (${fmt(prec.prixDroit, 2)} $/t au tour précédent)` : ""}. ${d.achatReserve ? fmt(d.achatReserve) + " droits ont dû être achetés à la réserve, à " + c.prixReserve + " $/t." : "Personne n’a eu à acheter à la réserve."}` : `<b>Bourse :</b> aucun échange ce tour.`);
+    marche.push(`<b>Électricité :</b> ${fmt(d.prixElec, 2)} $ l’unité${prec ? ` (${fmt(prec.prixElec, 2)} $ au tour précédent)` : ""}. ${electrifies.length ? "La consommation a augmenté parce que " + nomsListe(electrifies) + (electrifies.length > 1 ? " ont" : " a") + " de nouvelles cheminées électrifiées en service (nombre entre parenthèses)." : "Aucune nouvelle cheminée électrifiée n’est entrée en service."}${T.centreActif(c, t) ? " Le centre de données fait aussi monter la demande." : ""}`);
+    marche.push(`<b>Prix de vente du produit :</b> ${fmt(d.prixVente, 2)} $${prec ? ` (${fmt(prec.prixVente, 2)} $ au tour précédent)` : ""}. ${ajouts.length ? "La production totale a augmenté parce que " + nomsListe(ajouts) + (ajouts.length > 1 ? " ont" : " a") + " de nouvelles cheminées en service." : "La production totale n’a pas changé."}`);
+    let perso = "";
+    const vise = humains.length ? (ents[onglet] && ents[onglet].humain ? ents[onglet] : humains[0]) : null;
+    if (vise) {
+      const l = L(vise), a = L(vise, 1);
+      const r = (lab, k, inv) => `<tr><td>${lab}</td><td>${argent(inv ? -l[k] : l[k])}</td><td>${a ? argent(inv ? -a[k] : a[k]) : "—"}</td><td>${a ? variation(inv ? -l[k] : l[k], inv ? -a[k] : a[k]) : ""}</td></tr>`;
+      const phr = [];
+      if (l.achetes || l.reserve) phr.push(`Il te manquait ${fmt(l.achetes + l.reserve)} droits. Tu en as obtenu ${fmt(l.achetes)} à la bourse${d.prixDroit != null ? " à " + fmt(d.prixDroit, 2) + " $/t" : ""}${l.reserve ? `, et ${fmt(l.reserve)} à la réserve à ${c.prixReserve} $/t${d.prixDroit != null && l.prixOrdre < d.prixDroit ? `, parce que ton prix maximal (${fmt(l.prixOrdre)} $) était sous le prix de la bourse` : d.prixDroit == null ? ", parce que personne ne vendait à ton prix" : ", parce qu’il ne restait plus assez de droits à vendre"}` : ""}.`);
+      if (l.vendus || l.banqueFin || l.perdus) {
+        const reste = l.banqueFin + (l.perdus || 0);
+        const pourquoi = !reste ? "" : d.prixDroit == null ? " Personne n’a acheté à ton prix." : l.prixOrdre > d.prixDroit ? ` Ton prix minimal (${fmt(l.prixOrdre)} $) était au-dessus du prix de la bourse.` : " Les acheteurs ont trouvé assez de droits moins chers, offerts par le gouvernement ou par d’autres entreprises.";
+        phr.push(`Tu avais ${fmt(l.vendus + reste)} droits de trop. ${l.vendus ? `Tu en as vendu ${fmt(l.vendus)}${d.prixDroit != null ? " à " + fmt(d.prixDroit, 2) + " $/t" : ""}` : "Tu n’en as vendu aucun"}${l.banqueFin ? `, et ${fmt(l.banqueFin)} restent en réserve pour les prochains tours` : ""}${l.perdus ? `, et ${fmt(l.perdus)} sont perdus puisque la partie est finie` : ""}.${pourquoi}`);
+      }
+      if (a && Math.round(l.coutElec - a.coutElec)) phr.push(`Ta facture d’électricité est passée de ${argent(a.coutElec)} à ${argent(l.coutElec)} : ${l.nbElec !== a.nbElec ? "tu as plus de cheminées électrifiées" : "le prix de l’électricité a changé à cause des décisions des autres"}${l.nbElec !== a.nbElec && d.prixElec !== prec.prixElec ? ", et le prix de l’unité a changé" : ""}.`);
+      if (l.interets) phr.push(`Ton solde était négatif : tu as payé ${argent(l.interets)} d’intérêts.`);
+      if (l.decide && ((l.decide.electrifier || []).length || l.decide.vertes || l.decide.polluantes)) phr.push(`Ce tour, tu ${decisionsTexte(l).replace("électrifie", "as électrifié").replace(/\+(\d+) verte/, "as ajouté $1 cheminée verte").replace(/\+(\d+) polluante/, "as ajouté $1 cheminée polluante")}. L’effet commence au tour ${t + 1}.`);
+      perso = `<div class="bloc"><h3>Tes résultats${humains.length > 1 ? " : " + esc(vise.nom) : ""}</h3>
+        ${l.texteStrategie ? `<div class="note" style="margin-bottom:8px"><b>Ta stratégie au tour ${t} :</b> « ${esc(l.texteStrategie)} » <span aria-label="Confiance ${l.confiance} sur 5" style="color:var(--fossil)">${etoiles(l.confiance)}</span><br><span class="small muted">Compare-la avec ce qui s’est réellement passé ci-dessous.</span></div>` : ""}
+        <div class="estim"><div>Profit du tour<b class="${l.profit < 0 ? "neg" : ""}">${argent(l.profit)}</b></div><div>Solde<b class="${l.solde < 0 ? "neg" : ""}">${argent(l.solde)}</b></div><div>Émissions<b>${fmt(l.emissions)} t</b></div><div>Cheminées électrifiées<b>${l.nbElec} sur ${l.nbCheminees}</b></div></div>
+        <div class="table-wrap" style="margin-top:8px"><table><thead><tr><th>Poste</th><th>Tour ${t}</th><th>Tour ${t - 1 || "—"}</th><th>Variation</th></tr></thead><tbody>
+          ${r("Revenus", "revenus")}${r("Coûts fixes de production", "coutBase", 1)}${r("Carburant", "coutCarburant", 1)}${r("Électricité", "coutElec", 1)}${r("Carbone net (achats moins ventes)", "carbone", 1)}${r("Investissements", "investissement", 1)}${r("Intérêts", "interets", 1)}
+          <tr><td><b>Profit</b></td><td><b>${argent(l.profit)}</b></td><td>${a ? argent(a.profit) : "—"}</td><td>${a ? variation(l.profit, a.profit) : ""}</td></tr></tbody></table></div>
+        ${phr.length ? `<ul class="journal" style="margin-top:8px">${phr.map((x) => `<li>${x}</li>`).join("")}</ul>` : ""}</div>`;
+    }
+    const vueA = partie.vue || "admin";
+    const autres = d.lignes.map((l) => { const e = ents[l.id];
+      return `<tr class="${e.humain ? "humain" : ""}"><td>${esc(e.nom)}${!e.humain && partie.termine && e.strategie ? ` <span class="muted small">(${(T.STRATEGIES[e.strategie] || {}).nom || ""})</span>` : ""}</td><td style="text-align:left;white-space:normal">${decisionsTexte(l)}</td>
+        <td>${l.nbElec} / ${l.nbCheminees}</td><td>${fmt(l.emissions)}</td><td>${fmt(l.achetes)}${l.reserve ? ` <span class="oui">+${fmt(l.reserve)}</span>` : ""}</td><td>${fmt(l.vendus)}</td>
+        ${vueA === "admin" ? `<td class="${l.profit < 0 ? "neg" : ""}">${argent(l.profit)}</td><td class="${l.solde < 0 ? "neg" : ""}"><strong>${argent(l.solde)}</strong></td>` : vueA === "projection" && partie.soldes ? `<td class="${partie.soldes[l.id] < 0 ? "neg" : ""}"><strong>${argent(partie.soldes[l.id] || 0)}</strong></td>` : ""}</tr>`; }).join("");
+    return `<section class="card bilan"><h2>Bilan du tour ${t}</h2>
+      ${ev.length ? `<div class="evenement">${ev.map(esc).join(" ")}</div>` : ""}
+      <ul class="journal" style="margin-top:8px">${marche.map((x) => `<li>${x}</li>`).join("")}</ul>
+      ${perso}
+      <div class="bloc"><h3>Ce qu’ont fait les entreprises</h3>
+        <div class="table-wrap"><table><thead><tr><th>Entreprise</th><th style="text-align:left">Décisions du tour (effet au tour suivant)</th><th>Électrifiées</th><th>Émis. (t)</th><th>Droits achetés <span class="oui">+ réserve</span></th><th>Vendus</th>${vueA === "admin" ? "<th>Profit</th><th>Solde</th>" : vueA === "projection" && partie.soldes ? "<th>Solde</th>" : ""}</tr></thead><tbody>${autres}</tbody></table></div>
+        <p class="muted small" style="margin-top:6px">${vueA === "joueur" ? "Les profits et les soldes des autres entreprises restent confidentiels. " : ""}${!partie.termine ? "La stratégie des robots sera révélée à la fin de la partie." : ""}</p></div>
+    </section>`;
+  }
+  function barre(val, lim, lab, labLim) {
+    const ech = Math.max(val, lim) * 1.15 || 1, sur = val > lim;
+    return `<div class="charge ${sur ? "surcharge" : ""}" role="img" aria-label="${lab} ${fmt(val)}, ${labLim} ${fmt(lim)}">
+      <div class="remplissage" style="width:${Math.min(100, val / ech * 100)}%"></div><div class="limite" style="left:${lim / ech * 100}%"></div>
+      <div class="etiquette"><span>${lab} : ${fmt(val)} sur ${fmt(lim)} (${labLim})</span></div></div>`;
+  }
+  function banniereEvenement() {
+    if (partie.termine) return "";
+    const n = partie.entreprises.length, t = partie.tour, id = T.evenementDuTour(partie, t);
+    const encours = T.evenementsActifs(partie, t).filter((x) => x.debut < t);
+    let h = "";
+    if (id) { const E = T.EVENEMENTS[id]; h += `<div class="evenement"><b>Événement du tour ${t} : ${E.nom}.</b> ${esc(E.texte(partie.config, n, t))} <i>${esc(E.effet)}</i></div>`; }
+    if (encours.length) h += `<p class="small muted" style="margin:8px 0 0">Toujours en vigueur : ${encours.map((x) => T.EVENEMENTS[x.id].nom + (x.id === "eolien" && !x.enService ? " (en construction, en service au tour " + (x.debut + partie.config.eolienDelai) + ")" : " (depuis le tour " + x.debut + ")")).join(", ")}.</p>`;
+    return h;
+  }
+  function rendreMarches() {
+    const c0 = partie.config, d = partie.dernier, n = partie.entreprises.length, t = partie.tour, c = T.configTour(partie, t);
+    const pl = T.plancher(c, t), gratuits = T.droitsGratuits(c, t), gouv = T.venteGouv(c, t, n) + (c.foret || 0), plafond = gratuits * n + gouv;
+    const A = agregats(), emPrevues = A.em;
+    const conso = A.conso, ref = T.referenceElec(c, n);
+    const dem = T.demandeElecTotale(partie, conso, t), pe = T.prixElecPour(c, dem, n);
+    return `<section class="reseau" aria-label="Bourse du carbone et électricité">
+      <div class="reseau-tete"><h2>État des marchés pour le tour ${t}</h2><span class="muted small">Bourse du carbone</span></div>
+      ${banniereEvenement()}
+      <h3 style="margin-top:12px">D’où viennent les droits ce tour-ci</h3>
+      <div class="sources">
+        <div><b>1. Droits gratuits</b><span class="val">${fmt(gratuits)} par entreprise</span><span class="small muted">${fmt(gratuits * n)} au total. Ils diminuent à chaque tour.</span></div>
+        <div><b>2. Enchère du gouvernement</b><span class="val">${fmt(gouv)} droits au total</span><span class="small muted">Vendus au prix plancher de ${fmt(pl, 2)} $/t ou plus${c.foret ? `, dont ${fmt(c.foret)} venant du projet forestier` : ""}. Les entreprises qui ont des droits en trop vendent dans la même enchère.</span></div>
+        <div><b>3. Réserve du gouvernement</b><span class="val">${fmt(c0.prixReserve)} $/t, sans limite</span><span class="small muted">Ce qui manque après l’enchère s’y achète automatiquement. Elle sert de prix plafond.</span></div>
+      </div>
+      ${barre(emPrevues, plafond, "Émissions prévues", "droits gratuits et enchère du gouvernement")}
+      <div class="indicateurs">
+        <div class="ind fossil"><div class="val">${d && d.prixDroit != null ? fmt(d.prixDroit, 2) + " $/t" : "—"}</div><div class="lab">Prix des droits au dernier tour</div></div>
+        ${c.activistes ? `<div class="ind"><div class="val">${fmt(c.activistes.q)} droits</div><div class="lab">Achetés par les activistes, s’ils en trouvent</div></div>` : ""}
+      </div>
+      <div class="reseau-tete" style="margin-top:16px"><h2>Hydro-Québec</h2><span class="muted small">Hydro-Québec produit toute l’électricité demandée, mais au-delà de la capacité de référence, chaque unité coûte plus cher.</span></div>
+      ${barre(dem, ref, "Consommation d’électricité", "capacité de référence")}
+      <div class="indicateurs">
+        <div class="ind elec"><div class="val">${fmt(pe, 2)} $</div><div class="lab">Prix de l’électricité ce tour (par unité)</div></div>
+        <div class="ind elec"><div class="val">+${fmt(T.prixElecPour(c, dem + c.prodCheminee * c.elecParUnite, n) - pe, 3)} $</div><div class="lab">Hausse du prix pour chaque cheminée électrifiée de plus</div></div>
+        <div class="ind"><div class="val">${fmt(T.prixVentePour(c, A.qTot, n), 1)} $</div><div class="lab">Prix de vente du produit ce tour</div></div>
+        <div class="ind fossil"><div class="val">${fmt(c.carburant)} $</div><div class="lab">Carburant par unité produite</div></div>
+      </div>
+    </section>`;
+  }
+  function estimation(e, dec) {
+    const n = partie.entreprises.length, t = partie.tour, c = T.configTour(partie, t), cs = T.configTour(partie, Math.min(t + 1, partie.config.nbTours));
+    const A = agregats(), conso = A.conso, pe = T.prixElecPour(c, T.demandeElecTotale(partie, conso, t), n);
+    const qTot = A.qTot, pv = T.prixVentePour(c, qTot, n);
+    const em = T.emissions(c, e), gratuits = T.droitsGratuits(c, t), position = gratuits + e.banque - em, ref = prixRef();
+    const carbone = position < 0 ? -position * Math.min(c.prixReserve, ref) : -position * ref * (t >= c.nbTours ? 0 : 0);
+    const interets = e.solde < 0 ? -e.solde * c.taux : 0;
+    const profitAvant = T.production(c, e) * pv - T.coutsProduction(c, e, pe) - carbone - interets;
+    const inv = T.coutInvestissement(c, e, dec);
+    // prix de l'électricité aux tours suivants, si cette entreprise réalise ses conversions
+    const ajout = (dec.electrifier || []).length * c.prodCheminee * c.elecParUnite + (dec.vertes || 0) * c.prodCheminee * (c.verteElec || c.elecParUnite);
+    const peFutur = T.prixElecPour(cs, conso + ajout + (T.centreActif(cs) ? cs.chocCentreDonnees * T.referenceElec(cs, n) : 0), n);
+    return { pe, pv, em, gratuits, position, ref, carbone, interets, profitAvant, inv, peFutur, cs };
+  }
+  function rendreDecisions(humains) {
+    const e = partie.entreprises[onglet] && partie.entreprises[onglet].humain ? partie.entreprises[onglet] : humains[0];
+    onglet = e.id;
+    const c = T.configTour(partie, partie.tour), dec = decisions[e.id], t = partie.tour, x = estimation(e, dec), dernier = t >= c.nbTours, restants = c.nbTours - t;
+    const pDroitFutur = Math.max(T.plancher(c, t + 1), x.ref);
+    const gain = T.gainTransition(x.cs, x.peFutur, pDroitFutur);
+    const tuiles = e.cheminees.map((ch) => {
+      const elec = ch.type === "elec", choisi = dec.electrifier.includes(ch.num), cout = T.coutTransition(c, ch), base = T.coutTransitionBase(c, ch);
+      const aide = cout < base ? [c.subvention ? "Fonds d’électrification" : "", c.percee && ch.num >= 6 ? "percée technologique" : ""].filter(Boolean).join(" et ") : "";
+      const recup = gain > 0 ? Math.ceil(cout / gain) : null;
+      const origine = ch.origine === "verte" ? " (neuve, verte)" : ch.origine === "polluante" ? " (ajoutée, polluante)" : "";
+      if (ch.attente) return `<div class="ch choisie"><div class="etat">Électrification en cours</div><h3>Cheminée ${ch.num}<span class="muted small">${origine}</span></h3>
+        <dl><dt>Émissions</dt><dd>${fmt(T.emCheminee(c, ch))} t par tour</dd><dt>En service</dt><dd>au tour ${ch.attente}</dd></dl><p class="small muted" style="margin:6px 0 0">Retardée par la pénurie d’équipements.</p></div>`;
+      return `<div class="ch ${elec ? "electrifiee" : ""} ${choisi ? "choisie" : ""}">
+        <div class="etat">${elec ? "Électrifiée" : choisi ? (c.penurie ? "En service au tour " + (t + 2) : "Électrifiée au prochain tour") : "Au carburant"}</div>
+        <h3>Cheminée ${ch.num}<span class="muted small">${origine}</span></h3>
+        <dl><dt>Émissions</dt><dd>${fmt(T.emCheminee(c, ch))} t par tour</dd>
+        ${elec ? `<dt>Électricité</dt><dd>${fmt(c.prodCheminee * T.elecParUniteCh(c, ch))} unités</dd>` : `<dt>Coût de transition</dt><dd>${aide ? `<s class="muted">${argent(base)}</s> ` : ""}${argent(cout)}</dd>${aide ? `<dt></dt><dd class="small pos">grâce à : ${aide}</dd>` : ""}
+          <dt>Gain estimé</dt><dd>${gain > 0 ? argent(gain) + " par tour" : "aucun aux prix actuels"}</dd>
+          <dt>Rentabilisée en</dt><dd>${recup == null ? "jamais aux prix actuels" : recup + " tour" + (recup > 1 ? "s" : "") + (recup > restants ? " (trop tard)" : "")}</dd>`}</dl>
+        ${elec ? "" : `<label class="coche"><input type="checkbox" data-elec="${ch.num}" ${choisi ? "checked" : ""} ${dernier ? "disabled" : ""}> Électrifier (${argent(cout)})</label>`}
+      </div>`;
+    }).join("");
+    const solde = e.solde, marge = solde + c.credit, depasse = x.inv > marge, soldeFin = solde + x.profitAvant - x.inv;
+    const pos = x.position;
+    const carboneBloc = pos < -1e-9
+      ? `<div class="note alerte"><b>Il vous manque ${fmt(-pos)} droits</b> pour couvrir vos émissions de ce tour. Indiquez le prix maximal que vous acceptez de payer. Les acheteurs qui offrent le plus sont servis en premier, et tout le monde paie le même prix. Les droits que vous n’obtenez pas devront être achetés à la réserve du gouvernement, à ${argent(c.prixReserve)} la tonne.
+          <div class="ligne" style="margin-top:8px"><label>Prix maximal d’achat ($/t)<input type="number" id="prixAchat" min="0" max="${c.prixReserve}" step="1" value="${dec.prixAchat}"></label>
+          <span class="muted small">Plancher : ${fmt(T.plancher(c, t), 2)} $/t. Dernier prix : ${partie.dernier && partie.dernier.prixDroit != null ? fmt(partie.dernier.prixDroit, 2) + " $/t" : "aucun"}. Au-delà de ${c.prixReserve} $/t, la réserve est moins chère.</span></div>
+          <p class="small" style="margin:8px 0 0">Coût estimé : entre ${argent(-pos * T.plancher(c, t))} et ${argent(-pos * c.prixReserve)}.</p></div>`
+      : pos > 1e-9
+        ? `<div class="note ok"><b>Vous avez ${fmt(pos)} droits de trop.</b> ${dec.garderDroits ? "Vous avez choisi de les garder en réserve." : "Indiquez le prix minimal auquel vous acceptez de les vendre."} ${dernier ? "<b>C’est le dernier tour : les droits gardés ou invendus seront perdus.</b>" : "Les droits gardés ou invendus restent en réserve pour les tours suivants, mais ils ne vaudront plus rien à la fin de la partie."}
+          <label class="coche" style="display:flex;gap:6px;align-items:center;margin-top:8px"><input type="checkbox" id="garderDroits" ${dec.garderDroits ? "checked" : ""}> Je ne désire pas vendre mes droits en trop</label>
+          <div class="ligne" style="margin-top:8px"><label>Prix minimal de vente ($/t)<input type="number" id="prixVente" min="0" step="1" value="${dec.prixVente}" ${dec.garderDroits ? "disabled" : ""}></label>
+          <span class="muted small">Le gouvernement vend aussi des droits au prix plancher (${fmt(T.plancher(c, t), 2)} $/t) : demander beaucoup plus risque de ne rien vendre.</span></div></div>`
+        : `<div class="note">Vos droits couvrent exactement vos émissions de ce tour.</div>`;
+    return `<section class="card" aria-label="Décisions" style="margin-top:16px">
+      ${humains.length > 1 ? `<div class="onglets" role="tablist">${humains.map((h) => `<button role="tab" aria-selected="${h.id === e.id}" data-onglet="${h.id}">${esc(h.nom)}</button>`).join("")}</div>` : ""}
+      <h2>${esc(e.nom)}</h2>
+      <div class="estim">
+        <div>Solde<b class="${solde < 0 ? "neg" : ""}">${argent(solde)}</b></div>
+        <div>Marge de crédit restante<b>${argent(Math.max(0, marge))}</b></div>
+        <div>Production<b>${fmt(T.production(c, e))} unités</b></div>
+        <div>Émissions ce tour<b>${fmt(x.em)} t</b></div>
+      </div>
+
+      <div class="bloc"><h3>Ton bilan carbone de ce tour</h3>
+        <div class="estim">
+          <div>Émissions<b>${fmt(x.em)} t</b></div><div>Droits gratuits<b>${fmt(x.gratuits)}</b></div>
+          <div>Droits en réserve<b>${fmt(e.banque)}</b></div><div>${pos < 0 ? "Manque" : "Surplus"}<b class="${pos < 0 ? "oui" : ""}">${fmt(Math.abs(pos))}</b></div>
+        </div>
+        <p class="muted small" style="margin-top:6px">Les cheminées que vous électrifiez ce tour-ci ne réduisent vos émissions qu’à partir du prochain tour.</p>
+        ${carboneBloc}
+      </div>
+
+      <div class="bloc"><h3>Cheminées</h3>
+        <p class="muted small">Une cheminée au carburant produit ${c.prodCheminee} unités et émet ${fmt(c.prodCheminee * c.emissionUnite)} t par tour. Électrifiée, elle émet ${fmt(c.prodCheminee * c.emissionUnite * c.emissionResiduelle)} t, mais consomme de l’électricité d’Hydro-Québec. Le gain estimé tient compte du prix actuel des droits et du prix de l’électricité après vos conversions (${fmt(x.peFutur, 2)} $ l’unité).</p>
+        <div class="chs">${tuiles}</div>
+      </div>
+
+      <div class="bloc"><h3>Expansion</h3>
+        <p class="muted small">Chaque nouvelle cheminée ajoute ${c.prodCheminee} unités de production, à partir du prochain tour. Elle ne reçoit aucun droit gratuit, et plus de production fait baisser le prix de vente pour toutes les entreprises (environ ${fmt(c.pente * c.prodCheminee / partie.entreprises.length, 2)} $ par unité, par cheminée ajoutée).</p>
+        <p class="muted small"><b>Cheminée verte neuve</b> : conçue pour l’électricité, elle est plus efficace qu’une cheminée convertie (coût fixe de ${fmt(c.verteBase)} $ par unité au lieu de ${fmt(c.coutBase)} $, et ${fmt(c.verteElec)} unités d’électricité par produit au lieu de ${fmt(c.elecParUnite)}). Elle émet ${fmt(c.prodCheminee * c.emissionUnite * c.emissionResiduelle)} t par tour. <b>Cheminée polluante</b> : au carburant, elle émet ${fmt(c.prodCheminee * c.emissionUnite)} t par tour.</p>
+        <div class="ligne">
+          <label>Cheminées vertes (${argent(c.coutChemineeVerte)} chacune)<select id="vertes" ${dernier ? "disabled" : ""}>${[0, 1, 2, 3].map((k) => `<option value="${k}" ${dec.vertes === k ? "selected" : ""}>${k}</option>`).join("")}</select></label>
+          <label>Cheminées polluantes (${argent(c.coutChemineePolluante)} chacune)<select id="polluantes" ${dernier ? "disabled" : ""}>${[0, 1, 2, 3].map((k) => `<option value="${k}" ${dec.polluantes === k ? "selected" : ""}>${k}</option>`).join("")}</select></label>
+        </div>
+        ${dernier ? `<p class="muted small">C’est le dernier tour : un investissement n’aurait plus d’effet.</p>` : ""}
+      </div>
+
+      <div class="bloc"><h3>Budget</h3>
+        <div class="estim">
+          <div>Investissements prévus<b>${argent(x.inv)}</b></div>
+          <div>Profit estimé du tour<b class="${x.profitAvant < 0 ? "neg" : ""}">${argent(x.profitAvant)}</b></div>
+          <div>Solde estimé à la fin du tour<b class="${soldeFin < 0 ? "neg" : ""}">${argent(soldeFin)}</b></div>
+        </div>
+        ${x.interets > 0 ? `<div class="note alerte">Votre solde est négatif : vous payez ${argent(x.interets)} d’intérêts ce tour (${fmt(c.taux * 100)} % de ${argent(-solde)}).</div>` : ""}
+        ${depasse ? `<div class="note alerte"><b>Ces investissements dépassent votre marge de crédit</b> (${argent(Math.max(0, marge))} disponibles). Retirez-en avant de soumettre.</div>`
+          : soldeFin < 0 ? `<div class="note alerte"><b>Attention : vous serez en déficit</b> d’environ ${argent(-soldeFin)} à la fin du tour. Vous paierez alors environ ${argent(-soldeFin * c.taux)} d’intérêts au prochain tour (${fmt(c.taux * 100)} % par tour), tant que le solde restera négatif.</div>` : ""}
+        <p class="muted small" style="margin-top:6px">Le profit estimé utilise le prix de vente du dernier tour et, pour le carbone, le dernier prix des droits.</p>
+      </div>
+
+      <div class="bloc"><h3>Ta stratégie pour ce tour</h3>
+        <p class="muted small">Explique en une phrase ou deux ce que tu fais et pourquoi. Elle te sera rappelée au prochain tour, à côté de ton résultat.</p>
+        <textarea id="strategie" rows="3" maxlength="500" style="width:100%;border:1px solid var(--line);border-radius:6px;padding:8px;background:var(--surface);color:var(--ink);font:inherit" placeholder="Par exemple : j’électrifie les cheminées 4 et 5 avant que le prix des droits monte.">${esc(dec.texteStrategie)}</textarea>
+        <p class="small muted" id="compteur" style="margin:4px 0 0"></p>
+      </div>
+      <div class="bloc"><h3>Ta confiance dans cette stratégie</h3>
+        <div class="etoiles" role="radiogroup" aria-label="Confiance, de 1 à 5 étoiles">${[1, 2, 3, 4, 5].map((k) => `<button type="button" role="radio" aria-checked="${dec.confiance === k}" aria-label="${k} étoile${k > 1 ? "s" : ""}" data-etoile="${k}" class="${dec.confiance >= k ? "pleine" : ""}">★</button>`).join("")}
+          <span class="small muted">${["Choisis de 1 à 5 étoiles.", "Pas du tout confiant·e", "Peu confiant·e", "Moyennement confiant·e", "Confiant·e", "Très confiant·e"][dec.confiance]}</span></div>
+      </div>
+
+      <div class="actions"><button class="primary" id="soumettre" data-act="soumettre" ${depasse ? "disabled" : ""}>${ui.arme === "soumettre" ? "Confirmer : soumettre définitivement" : "Soumettre ma décision du tour " + t}</button>
+        <span class="small" id="manque" style="color:var(--alert)"></span>
+        <span class="muted small">Une fois soumise, ta décision ne peut plus être modifiée. Toutes les entreprises sont calculées en même temps quand ton enseignant termine le tour.</span></div>
+    </section>`;
+  }
+  function rendreJournal() {
+    const items = partie.journal.slice().reverse().flatMap((j) => j.evenements.map((ev) => `<li><span class="t">Tour ${j.tour}.</span> ${esc(ev)}</li>`));
+    return items.length ? `<section class="card" style="margin-top:16px"><h2>Historique : tous les événements</h2><ul class="journal">${items.join("")}</ul></section>` : "";
+  }
+  function graphe(s, series, maxY, titre, legende) {
+    const W = 640, H = 210, m = { l: 48, r: 12, t: 12, b: 26 }, n = partie.config.nbTours;
+    const X = (t) => m.l + ((t - 1) / Math.max(1, n - 1)) * (W - m.l - m.r), Y = (v) => H - m.b - (v / maxY) * (H - m.t - m.b);
+    const ticks = [0, 0.5, 1].map((f) => `<text x="${m.l - 6}" y="${Y(maxY * f) + 4}" text-anchor="end">${fmt(maxY * f)}</text><line x1="${m.l}" x2="${W - m.r}" y1="${Y(maxY * f)}" y2="${Y(maxY * f)}" stroke="var(--line)"/>`).join("");
+    const xt = Array.from({ length: n }, (_, i) => `<text x="${X(i + 1)}" y="${H - 8}" text-anchor="middle">${i + 1}</text>`).join("");
+    const lignes = series.map((q) => { const pts = s.filter((x) => x[q.k] != null); return pts.length ? `<path d="${pts.map((x, i) => (i ? "L" : "M") + X(x.tour).toFixed(1) + " " + Y(x[q.k]).toFixed(1)).join(" ")}" fill="none" stroke="${q.c}" stroke-width="${q.w || 2.5}" ${q.dash ? 'stroke-dasharray="5 4"' : ""}/>` + pts.map((x) => `<circle cx="${X(x.tour)}" cy="${Y(x[q.k])}" r="3" fill="${q.c}"/>`).join("") : ""; }).join("");
+    return `<div><h3>${titre}</h3><svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${titre}">${ticks}${xt}${lignes}</svg><p class="small muted">${legende}</p></div>`;
+  }
+  function rendreGraphiques() {
+    const s = partie.series; if (!s.length) return "";
+    const c = partie.config;
+    const maxP = Math.max(c.prixReserve, ...s.map((x) => x.prixDroit || 0)) * 1.1, maxE = Math.max(...s.map((x) => Math.max(x.emissionsTotales, x.plafond))) * 1.1;
+    const maxD = Math.max(...s.map((x) => Math.max(x.demande, x.reference))) * 1.1;
+    const s2 = s.map((x) => ({ ...x, reserve: c.prixReserve }));
+    const rows = s.map((x) => `<tr><td>Tour ${x.tour}</td><td>${x.prixDroit != null ? fmt(x.prixDroit, 2) + " $/t" : "—"}</td><td>${fmt(x.emissionsTotales)} / ${fmt(x.plafond)} t</td><td>${fmt(x.prixElec, 2)} $</td><td>${fmt(x.prixVente, 1)} $</td></tr>`).join("");
+    return `<section class="card" style="margin-top:16px"><h2>Historique : la bourse et l’électricité, tour par tour</h2>
+      <div class="grid cols-3" style="margin-top:10px">
+        ${graphe(s2, [{ k: "prixDroit", c: "var(--fossil)" }, { k: "plancher", c: "var(--muted)", dash: 1, w: 2 }, { k: "reserve", c: "var(--alert)", dash: 1, w: 2 }], maxP, "Prix des droits ($/t)", `<span style="color:var(--fossil);font-weight:700">Trait plein</span> : prix à la bourse. Pointillé gris : prix plancher. Pointillé rouge : réserve du gouvernement.`)}
+        ${graphe(s, [{ k: "emissionsTotales", c: "var(--fossil)" }, { k: "plafond", c: "var(--ink)", dash: 1, w: 2 }], maxE, "Émissions et droits disponibles (t)", `<span style="color:var(--fossil);font-weight:700">Trait plein</span> : émissions de toutes les entreprises. Pointillé : droits disponibles (gratuits et vente du gouvernement).`)}
+        ${graphe(s, [{ k: "demande", c: "var(--elec)" }, { k: "reference", c: "var(--ink)", dash: 1, w: 2 }], maxD, "Électricité (unités)", `<span style="color:var(--elec);font-weight:700">Trait plein</span> : consommation, centre de données compris. Pointillé : capacité de référence d’Hydro-Québec.`)}
+      </div>
+      <div class="table-wrap" style="margin-top:10px"><table><thead><tr><th>Tour</th><th>Droits</th><th>Émissions / droits disponibles</th><th>Électricité</th><th>Produit</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+  }
+  function agregats() {
+    if (partie.agg) return partie.agg;
+    const c = T.configTour(partie, partie.tour);
+    return { em: partie.entreprises.reduce((s, e) => s + T.emissions(c, e), 0), conso: partie.entreprises.reduce((s, e) => s + T.consoElec(c, e), 0), qTot: partie.entreprises.reduce((s, e) => s + T.production(c, e), 0) };
+  }
+  // =====================================================================
+  //  Contrôleur multijoueur
+  //  Vues : joueur (par défaut), administration (enseignant), projection (#affichage)
+  // =====================================================================
+  let B = null;               // dorsal : { db, uid, isOwner, save(nom, data), logout }
+  let VUE = "joueur";
+  let ST = null, FIRMS = [], ROUNDS = [], PRIV = null, MYDEC = null, DECS = [], ARCH = [], ROBOTS = {};
+  let P = null, chargementP = null, enCours = false;
+  let partie = null, decisions = {}, onglet = 0;
+  const ui = { tab: "partie", arme: null, draftTour: null, minutes: "5", nomPartie: "", robotNom: "", robotStrat: "calculateur", confier: {}, donner: {}, noms: {} };
+  const clean = (x) => JSON.parse(JSON.stringify(x));
+  const newId = () => Math.random().toString(36).slice(2, 9);
+  const FORCE_TEXTE = "Le professeur m’a forcé à terminer mon tour.";
+  let toastT;
+  function toast(m) { const t = $("#toast"); if (!t) return; t.textContent = m; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 3500); }
+  function err(e) { console.warn(e); if (e && /permission|invalid_argument|not_granted/i.test(String(e.code || e.message))) toast("Action refusée : vérifie ton accès."); else if (e && /quota|resource-exhausted/i.test(String(e.code || e.message))) toast("Le quota gratuit quotidien est atteint. Le jeu reprendra demain."); }
+  function armer(cle, ms) { if (ui.arme === cle) { ui.arme = null; return true; } ui.arme = cle; render(); setTimeout(() => { if (ui.arme === cle) { ui.arme = null; render(); } }, ms || 4500); return false; }
+  const btnArme = (cle, lab, labArme, cls) => `<button class="${cls || ""}" data-act="${cle}">${ui.arme === cle ? labArme : lab}</button>`;
+
+  // ---------- Rendu (avec conservation du focus et du défilement) ----------
+  let rendu = false;
+  function render() {
+    if (rendu) return; rendu = true;
+    requestAnimationFrame(() => {
+      rendu = false;
+      const a = document.activeElement, id = a && a.id, sel = a && a.selectionStart != null ? [a.selectionStart, a.selectionEnd] : null, sy = window.scrollY;
+      try { if (VUE === "admin") rendreAdmin(); else if (VUE === "projection") rendreProjection(); else rendreJoueur(); } catch (e) { console.error(e); }
+      if (id) { const n = document.getElementById(id); if (n) { n.focus(); if (sel) try { n.setSelectionRange(sel[0], sel[1]); } catch (x) {} } }
+      window.scrollTo(0, sy);
+    });
+  }
+  function entete(texte) { const el = $("#etiquetteTour"); if (el) el.textContent = texte; }
+  function minuterie() {
+    if (!ST || ST.status !== "tour" || !ST.endsAt) return "";
+    const s = Math.max(0, Math.ceil((ST.endsAt - Date.now()) / 1000));
+    return ` · ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  }
+
+  // ---------- Démarrage ----------
+  window.demarrerTransition = function (backend) {
+    B = backend;
+    VUE = location.hash === "#affichage" ? "projection" : B.isOwner ? "admin" : "joueur";
+    B.db.doc("game/state").onSnapshot((s) => { ST = s.exists ? s.data() : null; brancher(); render(); if (VUE === "admin") verifierP(); }, err);
+    if (B.isOwner) B.db.collection("archive").onSnapshot((q) => { ARCH = q.docs.map((d) => Object.assign({ id: d.id }, d.data())); render(); }, err);
+    if (VUE === "joueur") {
+      B.db.doc("priv/" + B.uid).onSnapshot((s) => { PRIV = s.exists ? s.data() : null; render(); }, err);
+      B.db.doc("decisions/" + B.uid).onSnapshot((s) => { MYDEC = s.exists ? s.data() : null; render(); }, err);
+    }
+    window.addEventListener("hashchange", () => location.reload());
+    app.addEventListener("click", onClick);
+    app.addEventListener("change", onChange);
+    app.addEventListener("input", onInput);
+    setInterval(tick, 500);
+    render();
+  };
+  const subs = {};
+  function abonner(nom, cle, creer, vider) {
+    if (subs[nom] && subs[nom].cle === cle) return;
+    if (subs[nom]) subs[nom].off();
+    vider(); subs[nom] = { cle, off: cle == null ? () => {} : creer() };
+  }
+  function brancher() {
+    const S = ST ? ST.session : null;
+    abonner("firms", S, () => B.db.collection("firms").where("session", "==", S).onSnapshot((q) => { FIRMS = q.docs.map((d) => Object.assign({ id: d.id }, d.data())); render(); }, err), () => { FIRMS = []; });
+    if (VUE !== "admin") abonner("rounds", S, () => B.db.collection("rounds").where("session", "==", S).onSnapshot((q) => { ROUNDS = q.docs.map((d) => d.data()).sort((a, b) => a.tour - b.tour); render(); }, err), () => { ROUNDS = []; });
+    if (B.isOwner) abonner("decs", S, () => B.db.collection("decisions").where("session", "==", S).onSnapshot((q) => { DECS = q.docs.map((d) => Object.assign({ id: d.id }, d.data())); render(); }, err), () => { DECS = []; });
+    if (VUE === "admin") abonner("robots", S, () => B.db.doc("etat/" + S + "_robots").onSnapshot((s) => { ROBOTS = s.exists ? (s.data().map || {}) : {}; render(); }, err), () => { ROBOTS = {}; });
+  }
+  let derniereSec = null;
+  function tick() {
+    if (ST && ST.status === "tour" && ST.endsAt) {
+      const s = Math.ceil((ST.endsAt - Date.now()) / 1000);
+      if (s !== derniereSec) { derniereSec = s; const el = $("#etiquetteTour"); if (el) el.textContent = el.textContent.replace(/ · \d+:\d\d$/, "") + minuterie(); }
+      if (VUE === "admin" && P && Date.now() > ST.endsAt && !enCours && ST.tour === P.tour) terminerTour().catch(err);
+    }
+  }
+
+  // ---------- État du moteur (administration) ----------
+  function verifierP() {
+    if (!ST || ST.status === "lobby") { if (P && (!ST || P.session !== ST.session)) P = null; return; }
+    if ((!P || P.session !== ST.session) && !chargementP) chargementP = chargerP(ST.session).catch(err).finally(() => { chargementP = null; render(); });
+  }
+  async function chargerP(S) {
+    const g = await B.db.doc("etat/" + S + "_global").get(); if (!g.exists) return;
+    const q = await B.db.collection("etat").where("session", "==", S).get();
+    const fs = q.docs.map((d) => d.data()).filter((x) => x.e).sort((a, b) => a.i - b.i);
+    const d = g.data(), p = Object.assign({}, d, { entreprises: fs.map((x) => x.e) });
+    p.alea = T.rng(1); p.alea.regler(d.rA); p.aleaEv = T.rng(1); p.aleaEv.regler(d.rE);
+    if (p.dernier) p.dernier.lignes = p.entreprises.map((e) => e.historique[e.historique.length - 1]).filter(Boolean);
+    p.series = p.series || []; p.journal = p.journal || []; p.plan = p.plan || {};
+    P = p;
+  }
+  async function sauverP() {
+    const S = P.session, der = P.dernier ? Object.assign({}, P.dernier) : null; if (der) delete der.lignes;
+    await B.db.doc("etat/" + S + "_global").set(clean({ session: S, nom: P.nom || "", date: P.date || null, config: P.config, tour: P.tour, termine: P.termine, plan: P.plan, rA: P.alea.etat(), rE: P.aleaEv.etat(), dernier: der, journal: P.journal, series: P.series, fids: P.fids, owners: P.owners }));
+    for (let i = 0; i < P.entreprises.length; i++) await B.db.doc("etat/" + S + "_f" + i).set(clean({ session: S, i, fid: P.fids[i], e: P.entreprises[i] }));
+  }
+  const PUBLIC = ["id", "quantite", "emissions", "nbElec", "nbCheminees", "achetes", "reserve", "vendus", "decide", "force"];
+  const publicLigne = (l) => { const o = {}; PUBLIC.forEach((k) => { if (l[k] !== undefined) o[k] = l[k]; }); return o; };
+  const journalPublic = (ev) => (ev || []).filter((x) => !/passe en déficit|n’a pas pu faire tous ses investissements/.test(x));
+  async function publierTour(t) {
+    const der = Object.assign({}, P.dernier); delete der.lignes;
+    const j = P.journal.find((x) => x.tour === t) || { evenements: [] };
+    await B.db.doc("rounds/" + P.session + "_" + t).set(clean({ session: P.session, tour: t, marche: der, serie: P.series[P.series.length - 1], evenements: journalPublic(j.evenements), lignes: P.dernier.lignes.map(publicLigne) }));
+  }
+  async function publierPrives() {
+    for (let i = 0; i < P.entreprises.length; i++) {
+      const e = P.entreprises[i], uid = P.owners[P.fids[i]];
+      if (!e.humain || !uid) continue;
+      await B.db.doc("priv/" + uid).set(clean({ session: P.session, fid: P.fids[i], i, tour: P.tour, termine: P.termine, nom: e.nom, cheminees: e.cheminees, solde: e.solde, banque: e.banque, interetsTotal: e.interetsTotal, historique: e.historique }));
+    }
+  }
+  function agregatsP() {
+    const c = T.configTour(P, P.tour);
+    return { em: P.entreprises.reduce((s, e) => s + T.emissions(c, e), 0), conso: P.entreprises.reduce((s, e) => s + T.consoElec(c, e), 0), qTot: P.entreprises.reduce((s, e) => s + T.production(c, e), 0) };
+  }
+  const soldesMap = () => Object.fromEntries(P.fids.map((f, i) => [f, Math.round(P.entreprises[i].solde)]));
+  const reveleMap = () => Object.fromEntries(P.fids.map((f, i) => [f, P.entreprises[i].humain ? null : P.entreprises[i].strategie]));
+
+  // ---------- Actions de l'enseignant ----------
+  async function creerPartie() {
+    if (ST && ST.status !== "lobby" && P && P.tour > 1 && !ARCH.some((a) => a.id === ST.session)) await archiver();
+    const S = newId(), c = ST && ST.config ? Object.assign({}, ST.config) : T.defaultConfig(6);
+    await B.db.doc("game/state").set(clean({ session: S, status: "lobby", nom: (ui.nomPartie || "").trim().slice(0, 60), date: null, tour: 0, config: c, showSoldes: false, soldes: null, revele: null, endsAt: null }));
+    ui.nomPartie = ""; P = null; toast("Partie créée : les étudiant·es peuvent s’inscrire.");
+  }
+  async function ajouterRobot() {
+    const nom = (ui.robotNom || "").trim().slice(0, 40) || "Robot " + (FIRMS.filter((f) => f.kind === "robot").length + 1);
+    const fid = "r-" + newId();
+    await B.db.doc("firms/" + fid).set({ session: ST.session, nom, kind: "robot", owner: null, ts: Date.now() });
+    await B.db.doc("etat/" + ST.session + "_robots").set({ session: ST.session, map: Object.assign({}, ROBOTS, { [fid]: ui.robotStrat }) });
+    ui.robotNom = ""; toast("Robot ajouté : " + nom + ".");
+  }
+  async function commencer() {
+    const liste = FIRMS.slice().sort((a, b) => (a.ts || 0) - (b.ts || 0));
+    if (liste.length < 2) return toast("Il faut au moins deux entreprises pour commencer.");
+    const c = clean(Object.assign({}, ST.config, { nbEntreprises: liste.length }));
+    const p = T.nouvellePartie(c, liste.map((f) => ({ nom: f.nom, humain: f.kind === "humain", strategie: ROBOTS[f.id] || "calculateur" })), Math.floor(Math.random() * 1e9) + 1);
+    p.session = ST.session; p.fids = liste.map((f) => f.id); p.owners = Object.fromEntries(liste.map((f) => [f.id, f.kind === "humain" ? f.owner : null]));
+    p.nom = ST.nom || ""; p.date = Date.now(); P = p;
+    await sauverP(); await publierPrives();
+    const m = parseFloat(ui.minutes) || 0;
+    await B.db.doc("game/state").update(clean({ status: "tour", tour: P.tour, endsAt: m > 0 ? Date.now() + m * 60000 : null, date: P.date, fids: P.fids, plan: P.plan, agg: agregatsP(), config: c, soldes: ST.showSoldes ? soldesMap() : null }));
+    toast("La partie commence.");
+  }
+  function decisionForcee(c) { return { electrifier: [], vertes: 0, polluantes: 0, prixAchat: c.prixReserve, prixVente: c.prixReserve, garderDroits: false, texteStrategie: FORCE_TEXTE, confiance: 1, force: true }; }
+  async function terminerTour() {
+    if (enCours || !P || P.termine || !ST || ST.status !== "tour") return; enCours = true;
+    try {
+      const t = P.tour, S = P.session;
+      const decs = P.entreprises.map((e, i) => {
+        const fid = P.fids[i];
+        if (!e.humain) return T.decisionRobot(P, i);
+        const d = DECS.find((x) => x.id === P.owners[fid] && x.session === S && x.tour === t && x.fid === fid);
+        if (!d) return decisionForcee(P.config);
+        return { electrifier: (d.electrifier || []).map(Number), vertes: +d.vertes || 0, polluantes: +d.polluantes || 0, prixAchat: +d.prixAchat || 0, prixVente: +d.prixVente || 0, garderDroits: !!d.garderDroits, texteStrategie: String(d.texteStrategie || ""), confiance: Math.max(1, Math.min(5, +d.confiance || 1)) };
+      });
+      T.resoudreTour(P, decs);
+      await sauverP(); await publierTour(t); await publierPrives();
+      await B.db.doc("game/state").update(clean({ status: P.termine ? "fini" : "resolu", tour: t, endsAt: null, plan: P.plan, soldes: ST.showSoldes || P.termine ? soldesMap() : null, showSoldes: !!ST.showSoldes, revele: P.termine ? reveleMap() : null }));
+      if (P.termine) await archiver();
+      toast(P.termine ? "Partie terminée." : "Tour " + t + " terminé.");
+    } finally { enCours = false; }
+  }
+  async function ouvrirTour() {
+    if (!P || P.termine) return;
+    const m = parseFloat(ui.minutes) || 0;
+    await B.db.doc("game/state").update(clean({ status: "tour", tour: P.tour, endsAt: m > 0 ? Date.now() + m * 60000 : null, plan: P.plan, agg: agregatsP() }));
+  }
+  async function toutJouer() {
+    if (P.entreprises.some((e) => e.humain)) return toast("Seulement pour une partie composée de robots.");
+    while (P && !P.termine) { if (ST.status !== "tour") { await ouvrirTour(); ST.status = "tour"; ST.tour = P.tour; } await terminerTour(); ST.status = P.termine ? "fini" : "resolu"; }
+  }
+  async function archiver() {
+    const res = P.entreprises.map((e, i) => ({ fid: P.fids[i], nom: e.nom, humain: e.humain, strategie: e.humain ? null : e.strategie, solde: Math.round(e.solde), nbElec: T.nbElec(e), interets: Math.round(e.interetsTotal) })).sort((a, b) => b.solde - a.solde);
+    await B.db.doc("archive/" + P.session).set(clean({ nom: P.nom || "", date: P.date || Date.now(), nbTours: P.config.nbTours, toursJoues: P.series.length, n: P.entreprises.length, resultats: res }));
+  }
+  async function renommer(fid, nom) {
+    nom = (nom || "").trim().slice(0, 40); if (!nom) return toast("Le nom ne peut pas être vide.");
+    await B.db.doc("firms/" + fid).update({ nom });
+    if (P) { const i = P.fids.indexOf(fid); if (i >= 0) { P.entreprises[i].nom = nom; await B.db.doc("etat/" + P.session + "_f" + i).set(clean({ session: P.session, i, fid, e: P.entreprises[i] })); await publierPrives(); } }
+    delete ui.noms[fid];
+  }
+  function nomNeutre(fid) { const l = FIRMS.slice().sort((a, b) => (a.ts || 0) - (b.ts || 0)); return "Entreprise " + (l.findIndex((f) => f.id === fid) + 1); }
+  async function tousNeutres() { for (const f of FIRMS) await renommer(f.id, nomNeutre(f.id)); toast("Tous les noms sont maintenant neutres."); }
+  async function retirer(fid) { await B.db.doc("firms/" + fid).delete(); if (ROBOTS[fid]) { const m = Object.assign({}, ROBOTS); delete m[fid]; await B.db.doc("etat/" + ST.session + "_robots").set({ session: ST.session, map: m }); } }
+  async function confierRobot(fid, strat) {
+    const i = P.fids.indexOf(fid); if (i < 0) return;
+    P.entreprises[i].humain = false; P.entreprises[i].strategie = strat; P.owners[fid] = null;
+    await B.db.doc("firms/" + fid).update({ kind: "robot", owner: null });
+    await sauverP(); toast(P.entreprises[i].nom + " est maintenant gérée par un robot.");
+  }
+  async function donnerA(fid, fidEtudiant) {
+    const i = P.fids.indexOf(fid), f = FIRMS.find((x) => x.id === fidEtudiant); if (i < 0 || !f) return;
+    P.entreprises[i].humain = true; P.entreprises[i].nom = f.nom; P.owners[fid] = f.owner;
+    await B.db.doc("firms/" + fid).update({ kind: "humain", owner: f.owner, nom: f.nom });
+    await B.db.doc("firms/" + fidEtudiant).delete();
+    await sauverP(); await publierPrives(); toast(f.nom + " dirige maintenant l’entreprise.");
+  }
+  async function basculerSoldes(v) { await B.db.doc("game/state").update(clean({ showSoldes: v, soldes: v && P ? soldesMap() : (P && P.termine ? soldesMap() : null) })); }
+  async function majConfig(cle, valeur) { const c = Object.assign({}, ST.config); c[cle] = valeur; await B.db.doc("game/state").update(clean({ config: c })); }
+
+  // ---------- Exportation, suppression, noms neutres (historique) ----------
+  async function chargerEtat(S) {
+    if (P && P.session === S) return P;
+    const g = await B.db.doc("etat/" + S + "_global").get(); if (!g.exists) return null;
+    const q = await B.db.collection("etat").where("session", "==", S).get();
+    return Object.assign({}, g.data(), { entreprises: q.docs.map((d) => d.data()).filter((x) => x.e).sort((a, b) => a.i - b.i).map((x) => x.e) });
+  }
+  async function exporterCSV(S) {
+    const p = await chargerEtat(S); if (!p || !p.entreprises.length) return toast("Aucune donnée à exporter pour cette partie.");
+    const n = (x) => x == null ? "" : String(Math.round(x * 100) / 100).replace(".", ","), q = (x) => '"' + String(x ?? "").replace(/"/g, '""') + '"';
+    const date = p.date ? new Date(p.date).toLocaleDateString("fr-CA") : "";
+    const tete = ["Partie", "Date", "Tour", "Entreprise", "Type", "Stratégie du robot", "Tour forcé", "Cheminées électrifiées ce tour", "Cheminées vertes ajoutées", "Cheminées polluantes ajoutées", "Prix offert à la bourse ($/t)", "Stratégie écrite", "Confiance (1 à 5)", "Production", "Émissions (t)", "Droits gratuits", "Droits en réserve au début", "Droits achetés à la bourse", "Droits achetés à la réserve", "Droits vendus", "Droits gardés", "Revenus", "Coûts de production", "Carbone net", "Investissements", "Intérêts", "Profit du tour", "Solde"];
+    const lignes = [tete.map(q).join(";")];
+    p.entreprises.forEach((e) => e.historique.forEach((l) => {
+      const d = l.decide || {};
+      lignes.push([p.nom || "", date, l.tour || "", e.nom, e.humain ? "Étudiant·e" : "Robot", e.humain ? "" : ((T.STRATEGIES[e.strategie] || {}).nom || ""), l.force ? "oui" : "non", (d.electrifier || []).join(" "), d.vertes || 0, d.polluantes || 0, n(l.prixOrdre), l.texteStrategie || "", l.confiance || "",
+        n(l.quantite), n(l.emissions), n(l.gratuits), n(l.banqueDebut), n(l.achetes), n(l.reserve), n(l.vendus), n(l.banqueFin), n(l.revenus), n(l.coutsProduction), n(l.carbone), n(l.investissement), n(l.interets), n(l.profit), n(l.solde)].map(q).join(";"));
+    }));
+    await B.save("transition-" + (p.nom || "partie").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").toLowerCase() + ".csv", "\ufeff" + lignes.join("\r\n"));
+  }
+  async function supprimerPartie(S) {
+    if (ST && ST.session === S) return toast("C’est la partie en cours : crée d’abord une nouvelle partie.");
+    for (const col of ["firms", "rounds", "decisions", "priv", "etat"]) { const qq = await B.db.collection(col).where("session", "==", S).get(); for (const d of qq.docs) await B.db.doc(col + "/" + d.id).delete(); }
+    await B.db.doc("archive/" + S).delete(); toast("Partie et données supprimées.");
+  }
+  async function neutraliserArchive(S) {
+    const a = ARCH.find((x) => x.id === S); if (!a) return;
+    const res = (a.resultats || []).map((r, k) => Object.assign({}, r, { nom: r.humain ? "Entreprise " + (k + 1) : r.nom }));
+    await B.db.doc("archive/" + S).update(clean({ resultats: res }));
+    const qq = await B.db.collection("etat").where("session", "==", S).get();
+    for (const d of qq.docs) { const x = d.data(); if (x.e && x.e.humain) { const r = res.find((y) => y.fid === x.fid); if (r) { x.e.nom = r.nom; await B.db.doc("etat/" + d.id).set(clean(x)); } } }
+    toast("Noms neutres enregistrés pour cette partie.");
+  }
+
+  // ---------- Vue reconstruite pour un joueur ou pour la projection ----------
+  function construireVue(moi) {
+    const fids = ST.fids || [], nomDe = (fid) => (FIRMS.find((f) => f.id === fid) || {}).nom || "Entreprise";
+    const rounds = ROUNDS.filter((r) => r.session === ST.session).sort((a, b) => a.tour - b.tour);
+    const hist = fids.map(() => []); rounds.forEach((r) => (r.lignes || []).forEach((l) => { if (hist[l.id]) hist[l.id].push(l); }));
+    if (moi != null && PRIV) hist[moi] = PRIV.historique || [];
+    const ents = fids.map((fid, i) => ({ id: i, nom: nomDe(fid), humain: i === moi, strategie: ST.revele ? ST.revele[fid] : null,
+      cheminees: i === moi && PRIV ? PRIV.cheminees : [], solde: i === moi && PRIV ? PRIV.solde : 0, banque: i === moi && PRIV ? PRIV.banque : 0,
+      interetsTotal: i === moi && PRIV ? PRIV.interetsTotal : 0, historique: hist[i] }));
+    const der = rounds[rounds.length - 1];
+    const dernier = der ? Object.assign({}, der.marche, { tour: der.tour, lignes: (der.lignes || []).map((l) => (moi != null && l.id === moi && PRIV && PRIV.historique && PRIV.historique[der.tour - 1]) ? PRIV.historique[der.tour - 1] : l) }) : null;
+    const soldes = ST.soldes ? Object.fromEntries(fids.map((f, i) => [i, ST.soldes[f]])) : null;
+    return { vue: moi != null ? "joueur" : "projection", config: ST.config, tour: ST.status === "tour" ? ST.tour : (ST.tour || 0) + 1, termine: ST.status === "fini", plan: ST.plan || {}, agg: ST.agg,
+      dernier, series: rounds.map((r) => r.serie), journal: rounds.map((r) => ({ tour: r.tour, evenements: r.evenements || [] })), entreprises: ents, soldes: ST.showSoldes || ST.status === "fini" ? soldes : null };
+  }
+
+  // ---------- Vue joueur ----------
+  function rendreJoueur() {
+    if (!ST) { entete(""); app.innerHTML = `<section class="card centre"><h2>Le jeu n’est pas encore ouvert</h2><p class="muted">Garde cette page ouverte : elle s’actualisera toute seule.</p></section>`; return; }
+    const mienne = FIRMS.find((f) => f.id === B.uid || f.owner === B.uid);
+    const formulaire = (tard) => `<section class="card centre" style="max-width:520px;margin:30px auto"><h2>Rejoindre la partie${ST.nom ? " : " + esc(ST.nom) : ""}</h2>
+      <p class="muted">Choisis le nom de ton entreprise. ${tard ? "La partie est commencée : ton enseignant te confiera une entreprise." : "Il sera visible par les autres joueurs."}</p>
+      <div class="ligne" style="justify-content:center;margin-top:10px"><input type="text" id="nomEntreprise" maxlength="40" style="border:1px solid var(--line);border-radius:6px;padding:8px 10px;background:var(--surface);min-width:240px" aria-label="Nom de ton entreprise"><button class="primary" data-act="rejoindre">Rejoindre</button></div></section>`;
+    if (ST.status === "lobby") {
+      entete(ST.nom || "Inscription");
+      app.innerHTML = mienne ? `<section class="card centre" style="max-width:560px;margin:30px auto"><h2>${esc(mienne.nom)}</h2><p class="muted">Ton entreprise est inscrite. La partie va bientôt commencer : garde cette page ouverte.</p><p class="small muted">${FIRMS.length} entreprise${FIRMS.length > 1 ? "s" : ""} inscrite${FIRMS.length > 1 ? "s" : ""}.</p></section>` : formulaire(false);
+      return;
+    }
+    const moi = PRIV && PRIV.session === ST.session ? (ST.fids || []).indexOf(PRIV.fid) : -1;
+    if (moi < 0) {
+      entete(ST.nom || "Partie en cours");
+      app.innerHTML = mienne ? `<section class="card centre" style="max-width:560px;margin:30px auto"><h2>${esc(mienne.nom)}</h2><p class="muted">La partie est commencée. Ton enseignant va te confier une entreprise : garde cette page ouverte.</p></section>` : formulaire(true);
+      return;
+    }
+    const maFirme = FIRMS.find((x) => x.id === PRIV.fid);
+    if (maFirme && maFirme.owner !== B.uid) {
+      entete(ST.nom || "Partie en cours");
+      app.innerHTML = `<section class="card centre" style="max-width:560px;margin:30px auto"><h2>${esc(PRIV.nom || "Ton entreprise")}</h2><p class="muted">Ton entreprise est maintenant gérée par un robot. Parle à ton enseignant si tu veux reprendre la partie.</p></section>`;
+      return;
+    }
+    partie = construireVue(moi); onglet = moi;
+    if (ui.draftTour !== partie.tour) { ui.draftTour = partie.tour; decisions[moi] = decisionVide(decisions[moi]); ui.arme = null; }
+    const soumis = ST.status === "tour" && MYDEC && MYDEC.session === ST.session && MYDEC.tour === ST.tour;
+    entete((ST.nom ? ST.nom + " · " : "") + (partie.termine ? "Partie terminée" : ST.status === "tour" ? "Tour " + ST.tour + " sur " + partie.config.nbTours : "Tour " + ST.tour + " terminé") + minuterie());
+    let milieu = "";
+    if (partie.termine) milieu = rendreFinJoueur(moi);
+    else if (ST.status === "resolu") milieu = `<section class="card" style="margin-top:16px"><h2>En attente du tour ${ST.tour + 1}</h2><p class="muted" style="margin:0">Lis ton bilan. Ton enseignant ouvrira bientôt le prochain tour.</p></section>`;
+    else if (soumis) milieu = rendreSoumis(MYDEC);
+    else milieu = rendreMarches() + rendreDecisions([partie.entreprises[moi]]);
+    app.innerHTML = `${partie.termine ? milieu : ""}${rendreBilan([partie.entreprises[moi]])}${partie.termine ? "" : milieu}${rendreGraphiques()}${rendreJournal()}`;
+    lierJoueur();
+  }
+  function rendreSoumis(d) {
+    const c = partie.config;
+    return `<section class="card soumis" style="margin-top:16px"><h2>Ta décision du tour ${d.tour} est soumise</h2>
+      <p>${esc(decisionsTexte({ decide: d }))}${(d.electrifier || []).length || d.vertes || d.polluantes ? "" : ""}. ${d.garderDroits ? "Tu gardes tes droits en trop." : "Prix à la bourse : " + fmt(d.prixAchat) + " $ à l’achat ou " + fmt(d.prixVente) + " $ à la vente, selon ta position."}</p>
+      <div class="note"><b>Ta stratégie :</b> « ${esc(d.texteStrategie)} » <span style="color:var(--fossil)">${etoiles(d.confiance)}</span></div>
+      <p class="muted small" style="margin-top:8px">Une décision soumise ne peut plus être modifiée. Les résultats apparaîtront quand ton enseignant terminera le tour${c ? "" : ""}.</p></section>`;
+  }
+  function rendreFinJoueur(moi) {
+    const e = partie.entreprises[moi];
+    return `<section class="card" style="margin-bottom:16px"><h2>Partie terminée</h2>
+      <div class="estim" style="margin-top:8px"><div>Ton solde final<b class="${e.solde < 0 ? "neg" : ""}">${argent(e.solde)}</b></div><div>Cheminées électrifiées<b>${(e.cheminees || []).filter((c) => c.type === "elec").length} sur ${(e.cheminees || []).length}</b></div><div>Intérêts payés<b>${argent(e.interetsTotal)}</b></div></div>
+      <div class="actions"><button class="primary" data-act="dossier">Télécharger mon dossier</button><span class="muted small">Garde-le : il te servira pour l’évaluation. Le classement est présenté par ton enseignant.</span></div></section>
+      ${tableauStrategies(e)}`;
+  }
+  function tableauStrategies(e) {
+    return `<section class="card" style="margin-bottom:16px"><h2>Tes stratégies, tour par tour</h2>
+      <div class="table-wrap"><table><thead><tr><th>Tour</th><th style="text-align:left">Décisions</th><th style="text-align:left">Stratégie</th><th>Confiance</th><th>Émis. (t)</th><th>Profit du tour</th><th>Solde</th></tr></thead><tbody>
+      ${e.historique.map((l, k) => `<tr><td>${k + 1}</td><td style="text-align:left;white-space:normal">${esc(decisionsTexte(l))}</td><td style="text-align:left;white-space:normal">${esc(l.texteStrategie || "—")}</td><td style="color:var(--fossil)">${l.confiance ? etoiles(l.confiance) : "—"}</td><td>${fmt(l.emissions)}</td><td class="${l.profit < 0 ? "neg" : ""}">${argent(l.profit)}</td><td class="${l.solde < 0 ? "neg" : ""}">${argent(l.solde)}</td></tr>`).join("")}
+      </tbody></table></div><p class="small muted" style="margin-top:8px">Ta confiance était-elle justifiée ? Repère les tours où elle était forte mais où le résultat a déçu, et demande-toi ce que tu n’avais pas prévu.</p></section>`;
+  }
+  async function telechargerDossier() {
+    const moi = onglet, e = partie.entreprises[moi], css = document.querySelector("style").textContent;
+    const html = `<!doctype html><html lang="fr-CA"><head><meta charset="utf-8"><title>Dossier : ${esc(e.nom)}</title><style>${css}</style></head><body><div class="wrap">
+      <h1>La transition : dossier de ${esc(e.nom)}</h1><p class="muted">${esc(ST.nom || "")}${ST.date ? ", " + new Date(ST.date).toLocaleDateString("fr-CA", { day: "numeric", month: "long", year: "numeric" }) : ""}. Solde final : ${argent(e.solde)}.</p>
+      ${tableauStrategies(e)}${rendreGraphiques()}${rendreJournal()}</div></body></html>`;
+    await B.save("dossier-transition-" + e.nom.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").toLowerCase() + ".html", html);
+  }
+  async function rejoindre() {
+    const nom = (($("#nomEntreprise") || {}).value || "").trim().slice(0, 40);
+    if (!nom) return toast("Écris le nom de ton entreprise.");
+    await B.db.doc("firms/" + B.uid).set({ session: ST.session, nom, owner: B.uid, kind: "humain", ts: Date.now() });
+  }
+  async function soumettre() {
+    const dec = decisions[onglet];
+    if (!strategieComplete(dec)) return toast("Écris ta stratégie et choisis ta confiance.");
+    const c = T.configTour(partie, partie.tour), e = partie.entreprises[onglet];
+    if (T.coutInvestissement(c, e, dec) > T.margeDisponible(c, e)) return toast("Tes investissements dépassent ta marge de crédit.");
+    if (!armer("soumettre", 6000)) return;
+    await B.db.doc("decisions/" + B.uid).set(clean({ session: ST.session, tour: ST.tour, fid: PRIV.fid, by: B.uid, electrifier: dec.electrifier.slice(), vertes: dec.vertes, polluantes: dec.polluantes,
+      prixAchat: dec.prixAchat, prixVente: dec.prixVente, garderDroits: !!dec.garderDroits, texteStrategie: dec.texteStrategie.trim().slice(0, 500), confiance: dec.confiance, ts: Date.now() }));
+    toast("Décision soumise.");
+  }
+
+  // ---------- Vue projetée ----------
+  function rendreProjection() {
+    if (!ST) { entete(""); app.innerHTML = `<section class="card centre"><h2>Aucune partie</h2></section>`; return; }
+    if (ST.status === "lobby") {
+      entete(ST.nom || "Inscription");
+      app.innerHTML = `<section class="card centre"><h2>${esc(ST.nom || "La transition")}</h2><p class="muted">Inscriptions en cours : ${FIRMS.length} entreprise${FIRMS.length > 1 ? "s" : ""}.</p>
+        <div class="puces">${FIRMS.slice().sort((a, b) => (a.ts || 0) - (b.ts || 0)).map((f) => `<span class="puce">${esc(f.nom)}</span>`).join("")}</div></section>`;
+      return;
+    }
+    partie = construireVue(null);
+    entete((ST.nom ? ST.nom + " · " : "") + (partie.termine ? "Partie terminée" : ST.status === "tour" ? "Tour " + ST.tour + " sur " + partie.config.nbTours : "Tour " + ST.tour + " terminé") + minuterie());
+    let haut = "";
+    if (ST.status === "tour") {
+      const fids = ST.fids || [];
+      const etat = (fid) => { const f = FIRMS.find((x) => x.id === fid) || {}; if (f.kind === "robot") return "robot"; return DECS.some((d) => d.fid === fid && d.session === ST.session && d.tour === ST.tour) ? "ok" : "attente"; };
+      const nbOk = fids.filter((f) => etat(f) !== "attente").length;
+      haut = `<section class="card" style="margin-bottom:16px"><h2>Tour ${ST.tour} : ${B.isOwner ? nbOk + " entreprise" + (nbOk > 1 ? "s" : "") + " prête" + (nbOk > 1 ? "s" : "") + " sur " + fids.length : "décisions en cours"}</h2>
+        ${B.isOwner ? `<div class="puces" style="margin-top:8px">${fids.map((f) => `<span class="puce ${etat(f)}">${etat(f) === "ok" ? "✓ " : etat(f) === "robot" ? "⚙ " : ""}${esc((FIRMS.find((x) => x.id === f) || {}).nom || "")}</span>`).join("")}</div>` : ""}
+        ${banniereEvenement()}</section>`;
+    }
+    if (partie.termine) haut = classementProjection() + haut;
+    app.innerHTML = `${haut}${rendreBilan([])}${rendreGraphiques()}${rendreJournal()}`;
+  }
+  function classementProjection() {
+    if (!partie.soldes) return `<section class="card" style="margin-bottom:16px"><h2>Partie terminée</h2><p class="muted" style="margin:0">Le classement apparaîtra ici quand ton enseignant affichera les soldes.</p></section>`;
+    const l = partie.entreprises.map((e, i) => ({ e, s: partie.soldes[i] })).sort((a, b) => b.s - a.s);
+    return `<section class="card" style="margin-bottom:16px"><h2>Classement final</h2><div class="table-wrap"><table><thead><tr><th>Rang</th><th>Entreprise</th><th>Type</th><th>Solde final</th></tr></thead><tbody>
+      ${l.map((x, k) => `<tr><td>${k + 1}</td><td>${esc(x.e.nom)}</td><td>${x.e.strategie ? "Robot : " + esc((T.STRATEGIES[x.e.strategie] || {}).nom || "") : "Étudiant·e"}</td><td class="${x.s < 0 ? "neg" : ""}"><strong>${argent(x.s)}</strong></td></tr>`).join("")}</tbody></table></div></section>`;
+  }
+
+  // ---------- Vue de l'enseignant ----------
+  const TABS = [["partie", "Partie"], ["entreprises", "Entreprises"], ["parametres", "Paramètres"], ["historique", "Historique"]];
+  function rendreAdmin() {
+    entete((ST && ST.nom ? ST.nom + " · " : "") + (!ST ? "Administration" : ST.status === "lobby" ? "Inscriptions" : ST.status === "fini" ? "Partie terminée" : ST.status === "tour" ? "Tour " + ST.tour + " en cours" : "Tour " + ST.tour + " terminé") + minuterie());
+    const n = ST && ST.status !== "lobby" && P ? P.entreprises.length : FIRMS.length;
+    let h = `<div class="onglets" role="tablist">${TABS.map(([k, l]) => `<button role="tab" data-act="tab" data-t="${k}" aria-selected="${ui.tab === k}">${l}${k === "entreprises" ? " (" + n + ")" : ""}</button>`).join("")}${B.logout ? `<button data-act="logout" style="margin-left:auto">Se déconnecter</button>` : ""}</div>`;
+    h += ui.tab === "entreprises" ? adminEntreprises() : ui.tab === "parametres" ? adminParametres() : ui.tab === "historique" ? adminHistorique() : adminPartie();
+    app.innerHTML = h;
+  }
+  function adminPartie() {
+    if (!ST) return `<section class="card"><h2>Créer une partie</h2><p class="muted">Donne-lui un nom, par exemple le groupe. Les étudiant·es pourront ensuite s’inscrire avec le lien du jeu.</p>
+      <div class="ligne" style="margin-top:8px"><input type="text" id="nomPartie" maxlength="60" value="${esc(ui.nomPartie)}" placeholder="Groupe 00001" style="border:1px solid var(--line);border-radius:6px;padding:8px 10px;background:var(--surface);min-width:240px"><button class="primary" data-act="creer">Créer la partie</button></div></section>`;
+    const c = ST.config, fini = ST.status === "fini";
+    const minInput = `<label class="small">Minuterie (min, 0 = aucune) <input type="number" id="minutes" min="0" max="30" step="0.5" value="${esc(ui.minutes)}" style="width:5.5em"></label>`;
+    let ctrl = "";
+    if (ST.status === "lobby") ctrl = `<p>${FIRMS.length} entreprise${FIRMS.length > 1 ? "s" : ""} inscrite${FIRMS.length > 1 ? "s" : ""}, dont ${FIRMS.filter((f) => f.kind === "robot").length} robot${FIRMS.filter((f) => f.kind === "robot").length > 1 ? "s" : ""}. Vérifie les noms dans l’onglet Entreprises.</p>
+      <div class="actions">${minInput}<button class="primary" data-act="commencer" ${FIRMS.length < 2 ? "disabled" : ""}>Commencer la partie (tour 1)</button></div>`;
+    else if (!P) ctrl = `<p class="muted">Chargement de la partie…</p>`;
+    else if (ST.status === "tour") {
+      const humains = P.entreprises.map((e, i) => ({ e, fid: P.fids[i] })).filter((x) => x.e.humain);
+      const ok = humains.filter((x) => DECS.some((d) => d.fid === x.fid && d.session === ST.session && d.tour === ST.tour));
+      ctrl = `<p><b>${ok.length} décision${ok.length > 1 ? "s" : ""} reçue${ok.length > 1 ? "s" : ""} sur ${humains.length}</b>${humains.length - ok.length ? ". En attente : " + humains.filter((x) => !ok.includes(x)).map((x) => esc(x.e.nom)).join(", ") : ""}.</p>
+        <div class="actions"><button class="primary" data-act="terminer">${humains.length - ok.length ? "Forcer la fin du tour " + ST.tour : "Terminer le tour " + ST.tour}</button>
+        ${ST.endsAt ? `<button data-act="plus1">+ 1 min</button><button data-act="stop">Arrêter la minuterie</button>` : ""}${humains.length ? "" : `<button data-act="toutjouer">Jouer jusqu’à la fin</button>`}</div>
+        <p class="muted small">Les entreprises qui n’ont pas soumis reçoivent la décision forcée : aucun investissement, prix de ${c.prixReserve} $ à l’achat ou à la vente, la stratégie « ${FORCE_TEXTE} » et une confiance de 1 étoile. Garde cette page ouverte : c’est elle qui calcule les tours.</p>`;
+    } else if (ST.status === "resolu") ctrl = `<div class="actions">${minInput}<button class="primary" data-act="ouvrir">Ouvrir le tour ${P.tour}</button>${P.entreprises.some((e) => e.humain) ? "" : `<button data-act="toutjouer">Jouer jusqu’à la fin</button>`}</div>`;
+    else ctrl = `<p>La partie est terminée et archivée.</p>`;
+    let h = `<section class="card"><div class="ligne" style="justify-content:space-between;align-items:flex-start"><div>
+        <label class="small muted">Nom de la partie <input type="text" id="nomPartieActuelle" maxlength="60" value="${esc(ui.nomPartieEdit != null ? ui.nomPartieEdit : ST.nom || "")}" style="display:block;border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:var(--surface);min-width:240px;margin-top:3px"></label>
+        <p class="small muted" style="margin:6px 0 0">${ST.date ? "Partie jouée le " + new Date(ST.date).toLocaleDateString("fr-CA", { day: "numeric", month: "long", year: "numeric" }) + ". " : ""}${c.nbTours} tours.</p></div>
+        <div class="actions" style="margin-top:0"><label class="coche" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="showSoldes" ${ST.showSoldes ? "checked" : ""} ${ST.status === "lobby" ? "disabled" : ""}> Afficher les soldes sur la projection</label>
+        ${ST.status !== "lobby" ? `<button data-act="export" data-s="${ST.session}">Exporter en CSV</button>` : ""}</div></div>
+      ${ctrl}
+      <p class="small muted" style="margin-top:10px">Projection : ajoute <b>#affichage</b> à la fin du lien de cette page et ouvre-la sur l’ordinateur relié au projecteur.</p>
+      <div class="ligne" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line)"><input type="text" id="nomPartie" maxlength="60" value="${esc(ui.nomPartie)}" placeholder="Nom de la prochaine partie" style="border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:var(--surface)">${btnArme("nouvelle", "Nouvelle partie", "Confirmer : archiver celle-ci et en créer une nouvelle")}</div></section>`;
+    if (P && ST.status !== "lobby") {
+      partie = Object.assign(P, { vue: "admin", agg: null, soldes: null });
+      h += `${fini ? classementAdmin() : ""}${rendreBilan([])}${!fini && ST.status === "tour" ? rendreMarches() : ""}${rendreGraphiques()}${rendreJournal()}`;
+    }
+    return h;
+  }
+  function classementAdmin() {
+    const l = P.entreprises.map((e, i) => ({ e, i })).sort((a, b) => b.e.solde - a.e.solde);
+    return `<section class="card" style="margin:16px 0"><h2>Classement final</h2><div class="table-wrap"><table><thead><tr><th>Rang</th><th>Entreprise</th><th>Type</th><th>Cheminées électrifiées</th><th>Intérêts payés</th><th>Solde final</th></tr></thead><tbody>
+      ${l.map((x, k) => `<tr><td>${k + 1}</td><td>${esc(x.e.nom)}</td><td>${x.e.humain ? "Étudiant·e" : "Robot : " + esc((T.STRATEGIES[x.e.strategie] || {}).nom || "")}</td><td>${T.nbElec(x.e)} sur ${x.e.cheminees.length}</td><td>${argent(x.e.interetsTotal)}</td><td class="${x.e.solde < 0 ? "neg" : ""}"><strong>${argent(x.e.solde)}</strong></td></tr>`).join("")}</tbody></table></div></section>`;
+  }
+  function adminEntreprises() {
+    if (!ST) return `<section class="card"><p class="muted">Crée d’abord une partie.</p></section>`;
+    const lobby = ST.status === "lobby", stratOpts = (v) => STRATS.map((s) => `<option value="${s}" ${v === s ? "selected" : ""}>${T.STRATEGIES[s].nom}</option>`).join("");
+    const enJeu = !lobby && P ? P.fids : null;
+    const liste = enJeu ? enJeu.map((fid, i) => ({ fid, e: P.entreprises[i], f: FIRMS.find((x) => x.id === fid) || {} })) : FIRMS.slice().sort((a, b) => (a.ts || 0) - (b.ts || 0)).map((f) => ({ fid: f.id, e: null, f }));
+    const attente = enJeu ? FIRMS.filter((f) => f.kind === "humain" && !enJeu.includes(f.id)) : [];
+    const lignes = liste.map(({ fid, e, f }) => {
+      const humain = e ? e.humain : f.kind === "humain", nom = e ? e.nom : f.nom;
+      const etat = !e || ST.status !== "tour" ? "" : !humain ? "Robot" : DECS.some((d) => d.fid === fid && d.session === ST.session && d.tour === ST.tour) ? "✓ Soumise" : "En attente";
+      let actions = "";
+      if (lobby) actions = btnArme("retirer:" + fid, "Retirer", "Confirmer le retrait", "petit");
+      else if (e && humain) actions = `<select id="conf-${fid}" data-conf="${fid}" aria-label="Stratégie du robot">${stratOpts(ui.confier[fid] || "calculateur")}</select>${btnArme("confier:" + fid, "Confier à un robot", "Confirmer", "petit")}`;
+      else if (e && !humain && attente.length) actions = `<select id="don-${fid}" data-don="${fid}" aria-label="Étudiant·e"><option value="">Choisir un·e étudiant·e</option>${attente.map((a) => `<option value="${a.id}" ${ui.donner[fid] === a.id ? "selected" : ""}>${esc(a.nom)}</option>`).join("")}</select><button class="petit" data-act="donner:${fid}">Donner le contrôle</button>`;
+      return `<tr><td><div class="ligne" style="flex-wrap:nowrap;gap:6px"><input type="text" id="nom-${fid}" data-nom="${fid}" maxlength="40" value="${esc(ui.noms[fid] != null ? ui.noms[fid] : nom)}" style="border:1px solid var(--line);border-radius:6px;padding:4px 6px;background:var(--surface);width:12em"><button class="petit" data-act="renommer:${fid}">Enregistrer</button><button class="petit" data-act="neutre:${fid}">Nom neutre</button></div></td>
+        <td>${humain ? "Étudiant·e" : "Robot : " + esc((T.STRATEGIES[e ? e.strategie : ROBOTS[fid]] || {}).nom || "")}</td><td>${etat}</td><td><div class="ligne" style="gap:6px">${actions}</div></td></tr>`;
+    }).join("");
+    return `<section class="card"><div class="ligne" style="justify-content:space-between"><h2>Entreprises</h2>${btnArme("tousneutres", "Rendre tous les noms neutres", "Confirmer : tous les noms neutres")}</div>
+      <div class="table-wrap" style="margin-top:8px"><table><thead><tr><th style="text-align:left">Nom</th><th>Type</th><th>Tour en cours</th><th>Actions</th></tr></thead><tbody>${lignes || `<tr><td colspan="4" class="muted">Aucune entreprise pour l’instant.</td></tr>`}</tbody></table></div>
+      ${lobby ? `<div class="bloc"><h3>Ajouter un robot</h3><div class="ligne"><input type="text" id="robotNom" maxlength="40" value="${esc(ui.robotNom)}" placeholder="Nom du robot" style="border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:var(--surface)"><select id="robotStrat" aria-label="Stratégie du robot">${stratOpts(ui.robotStrat)}</select><button class="primary" data-act="robot">Ajouter</button></div>
+        <p class="muted small">${STRATS.map((s) => "<b>" + T.STRATEGIES[s].nom + "</b> : " + T.STRATEGIES[s].desc).join(" ")}</p></div>` : ""}
+      ${attente.length ? `<div class="bloc"><h3>Étudiant·es en attente d’une entreprise</h3><p>${attente.map((a) => esc(a.nom)).join(", ")}</p><p class="muted small">Donne-leur le contrôle d’une entreprise gérée par un robot, dans le tableau ci-dessus. Ils reprennent son historique.</p></div>` : ""}</section>`;
+  }
+  function adminParametres() {
+    if (!ST) return `<section class="card"><p class="muted">Crée d’abord une partie.</p></section>`;
+    const c = ST.config, lobby = ST.status === "lobby", dis = lobby ? "" : "disabled";
+    const seq = c.sequenceEvenements || {}, opts = (v) => `<option value="hasard" ${!v || v === "hasard" ? "selected" : ""}>Au hasard</option><option value="aucun" ${v === "aucun" ? "selected" : ""}>Aucun événement</option>` + Object.keys(T.EVENEMENTS).map((k) => `<option value="${k}" ${v === k ? "selected" : ""}>${T.EVENEMENTS[k].nom}${T.EVENEMENTS[k].condition ? " (sous condition)" : ""}</option>`).join("");
+    const rows = []; for (let t = c.debutEvenements; t <= c.nbTours; t++) rows.push(`<label>Tour ${t}<select data-seq="${t}" ${dis}>${opts(seq[t])}</select></label>`);
+    return `<section class="card"><h2>Paramètres de la partie</h2>${lobby ? "" : `<p class="note">La partie est commencée : les paramètres ne peuvent plus être modifiés.</p>`}
+      <div class="ligne" style="margin-top:8px"><label>Nombre de tours (suggéré : 10) <input type="number" data-param="nbTours" min="4" max="14" value="${c.nbTours}" ${dis}></label></div>
+      <div class="bloc"><h3>Événements</h3><label class="coche" style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-param="evenements" ${c.evenements ? "checked" : ""} ${dis}> Un événement par tour à partir du tour ${c.debutEvenements}, annoncé au début du tour</label>
+        <div class="params" style="margin-top:8px">${rows.join("")}</div>
+        <p class="muted small">Le parc éolien n’arrive que si la consommation d’électricité a dépassé la capacité de référence au tour précédent.</p></div>
+      <div class="bloc"><h3>Équilibrage</h3><div class="params">${PARAMS.map(([k, lab]) => `<label>${lab}<input type="number" step="any" data-param="${k}" value="${c[k]}" ${dis}></label>`).join("")}</div>
+        <label class="small muted" style="display:block;margin-top:10px">Coûts de transition des cheminées 1 à 10 ($, séparés par des virgules)<input type="text" data-param="coutsTransition" value="${c.coutsTransition.join(", ")}" ${dis} style="display:block;width:100%;margin-top:3px;border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:var(--surface)"></label></div></section>`;
+  }
+  function adminHistorique() {
+    if (!ARCH.length) return `<section class="card"><p class="muted">Aucune partie terminée pour l’instant. Une partie est archivée à la fin de son dernier tour ou quand tu en crées une nouvelle.</p></section>`;
+    return `<p class="muted small">Les données de chaque partie (décisions, stratégies, résultats) sont conservées jusqu’à ce que tu supprimes la partie. Pour la Loi 25, rends les noms neutres ou supprime la partie quand tu n’en as plus besoin.</p>` +
+      ARCH.slice().sort((a, b) => (b.date || 0) - (a.date || 0)).map((a) => `<section class="card" style="margin-bottom:12px"><div class="ligne" style="justify-content:space-between"><div><h3>${esc(a.nom || "Partie sans nom")}</h3><p class="small muted" style="margin:2px 0 0">${a.date ? new Date(a.date).toLocaleDateString("fr-CA", { day: "numeric", month: "long", year: "numeric" }) + ", " : ""}${a.toursJoues} tour${a.toursJoues > 1 ? "s" : ""}, ${a.n} entreprises</p></div>
+        <div class="ligne" style="gap:6px"><button class="petit" data-act="export" data-s="${a.id}">Exporter en CSV</button>${btnArme("neutarch:" + a.id, "Rendre les noms neutres", "Confirmer", "petit")}${btnArme("suppr:" + a.id, "Supprimer la partie", "Confirmer : tout supprimer", "petit danger")}</div></div>
+        <div class="table-wrap" style="margin-top:8px"><table><thead><tr><th>Rang</th><th>Entreprise</th><th>Type</th><th>Électrifiées</th><th>Solde</th></tr></thead><tbody>${(a.resultats || []).map((r, k) => `<tr><td>${k + 1}</td><td>${esc(r.nom)}</td><td>${r.humain ? "Étudiant·e" : "Robot : " + esc((T.STRATEGIES[r.strategie] || {}).nom || "")}</td><td>${r.nbElec}</td><td class="${r.solde < 0 ? "neg" : ""}">${argent(r.solde)}</td></tr>`).join("")}</tbody></table></div></section>`).join("");
+  }
+
+  // ---------- Interactions ----------
+  async function onClick(ev) {
+    const b = ev.target.closest("[data-act]"); if (!b || b.disabled) return;
+    const a = b.dataset.act;
+    try {
+      if (a === "tab") { ui.tab = b.dataset.t; ui.arme = null; render(); return; }
+      if (a === "logout") { B.logout(); return; }
+      if (a === "rejoindre") return await rejoindre();
+      if (a === "soumettre") return await soumettre();
+      if (a === "dossier") return await telechargerDossier();
+      if (a === "creer") return await creerPartie();
+      if (a === "nouvelle") { if (armer("nouvelle")) await creerPartie(); return; }
+      if (a === "commencer") return await commencer();
+      if (a === "terminer") return await terminerTour();
+      if (a === "ouvrir") return await ouvrirTour();
+      if (a === "toutjouer") return await toutJouer();
+      if (a === "plus1") return await B.db.doc("game/state").update({ endsAt: Math.max(Date.now(), ST.endsAt || Date.now()) + 60000 });
+      if (a === "stop") return await B.db.doc("game/state").update({ endsAt: null });
+      if (a === "robot") return await ajouterRobot();
+      if (a === "export") return await exporterCSV(b.dataset.s);
+      if (a === "tousneutres") { if (armer("tousneutres")) await tousNeutres(); return; }
+      const [cmd, arg] = a.split(":");
+      if (cmd === "renommer") { const i = document.getElementById("nom-" + arg); return await renommer(arg, i ? i.value : ""); }
+      if (cmd === "neutre") return await renommer(arg, nomNeutre(arg));
+      if (cmd === "retirer") { if (armer(a)) await retirer(arg); return; }
+      if (cmd === "confier") { if (armer(a)) await confierRobot(arg, ui.confier[arg] || "calculateur"); return; }
+      if (cmd === "donner") { if (!ui.donner[arg]) return toast("Choisis d’abord un·e étudiant·e."); return await donnerA(arg, ui.donner[arg]); }
+      if (cmd === "neutarch") { if (armer(a)) await neutraliserArchive(arg); return; }
+      if (cmd === "suppr") { if (armer(a)) await supprimerPartie(arg); return; }
+    } catch (e) { err(e); }
+  }
+  async function onChange(ev) {
+    const t = ev.target;
+    try {
+      if (t.id === "showSoldes") return await basculerSoldes(t.checked);
+      if (t.id === "nomPartieActuelle") { await B.db.doc("game/state").update({ nom: t.value.trim().slice(0, 60) }); if (P) P.nom = t.value.trim().slice(0, 60); ui.nomPartieEdit = null; return; }
+      if (t.id === "robotStrat") { ui.robotStrat = t.value; return; }
+      if (t.dataset.conf) { ui.confier[t.dataset.conf] = t.value; return; }
+      if (t.dataset.don) { ui.donner[t.dataset.don] = t.value; return; }
+      if (t.dataset.seq) { const seq = Object.assign({}, ST.config.sequenceEvenements || {}); seq[t.dataset.seq] = t.value; return await majConfig("sequenceEvenements", seq); }
+      if (t.dataset.param) {
+        const k = t.dataset.param;
+        if (k === "evenements") return await majConfig(k, t.checked);
+        if (k === "coutsTransition") { const ct = t.value.split(/[,;\s]+/).map((x) => Math.round(+x)).filter((x) => x > 0); if (!ct.length) return; while (ct.length < ST.config.nbCheminees) ct.push(ct[ct.length - 1]); return await majConfig(k, ct.slice(0, ST.config.nbCheminees)); }
+        const v = parseFloat(t.value); if (isNaN(v)) return;
+        if (k === "nbTours") return await majConfig(k, Math.max(4, Math.min(14, Math.round(v))));
+        return await majConfig(k, v);
+      }
+    } catch (e) { err(e); }
+  }
+  function onInput(ev) {
+    const t = ev.target;
+    if (t.id === "nomPartie") ui.nomPartie = t.value;
+    if (t.id === "nomPartieActuelle") ui.nomPartieEdit = t.value;
+    if (t.id === "robotNom") ui.robotNom = t.value;
+    if (t.id === "minutes") ui.minutes = t.value;
+    if (t.dataset && t.dataset.nom) ui.noms[t.dataset.nom] = t.value;
+  }
+  function lierJoueur() {
+    const dec = decisions[onglet]; if (!dec || partie.termine) return;
+    app.querySelectorAll("[data-elec]").forEach((el) => el.addEventListener("change", () => { const k = +el.dataset.elec; dec.electrifier = dec.electrifier.filter((x) => x !== k); if (el.checked) dec.electrifier.push(k); ui.arme = null; render(); }));
+    const v = $("#vertes"); if (v) v.addEventListener("change", () => { dec.vertes = +v.value; ui.arme = null; render(); });
+    const p = $("#polluantes"); if (p) p.addEventListener("change", () => { dec.polluantes = +p.value; ui.arme = null; render(); });
+    const a = $("#prixAchat"); if (a) a.addEventListener("change", () => { dec.prixAchat = Math.max(0, Math.min(partie.config.prixReserve, parseFloat(a.value) || 0)); });
+    const s = $("#prixVente"); if (s) s.addEventListener("change", () => { dec.prixVente = Math.max(0, parseFloat(s.value) || 0); });
+    const g = $("#garderDroits"); if (g) g.addEventListener("change", () => { dec.garderDroits = g.checked; render(); });
+    const st = $("#strategie"); if (st) st.addEventListener("input", () => { dec.texteStrategie = st.value; majBouton(); });
+    app.querySelectorAll("[data-etoile]").forEach((b) => b.addEventListener("click", () => { dec.confiance = +b.dataset.etoile; render(); }));
+    majBouton();
+  }
+  function majBouton() {
+    const b = $("#soumettre"), m = $("#manque"), cpt = $("#compteur"), dec = decisions[onglet];
+    if (cpt && dec) { const k = (dec.texteStrategie || "").trim().length; cpt.textContent = k >= MIN_STRATEGIE ? "Merci." : `Encore ${MIN_STRATEGIE - k} caractère${MIN_STRATEGIE - k > 1 ? "s" : ""} au minimum.`; }
+    if (!b || !m || !partie || partie.termine) return;
+    const c = T.configTour(partie, partie.tour), e = partie.entreprises[onglet];
+    const depasse = T.coutInvestissement(c, e, dec) > T.margeDisponible(c, e), complet = strategieComplete(dec);
+    b.disabled = depasse || !complet;
+    m.textContent = !complet ? "Écris ta stratégie (au moins " + MIN_STRATEGIE + " caractères) et choisis ta confiance pour soumettre." : "";
+  }
+
+})();
+</script>
+<script>
+/* Configuration Firebase du projet « jeu-transition ».
+   L'administration est réservée au compte enseignant (courriel et mot de passe) ;
+   les règles Firestore vérifient son UID pour toute écriture. */
+window.TR_CONFIG = { firebase: {
+  apiKey: "AIzaSyD9Kg5Ju_mU5REZU-Izhe6J23ZIqvRgXwM",
+  authDomain: "jeu-transition.firebaseapp.com",
+  projectId: "jeu-transition",
+  storageBucket: "jeu-transition.firebasestorage.app",
+  messagingSenderId: "983187187433",
+  appId: "1:983187187433:web:1dbd1a9170b8e5d1a0b278"
+} };
+</script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInAnonymously, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, collection, query, where, limit, getDoc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const msg = (t) => { document.getElementById("app").innerHTML = '<section class="card centre"><h2>Impossible d’ouvrir le jeu</h2><p>' + t + '</p></section>'; };
+const C = window.TR_CONFIG;
+if (!C || String(C.firebase.apiKey).indexOf("COLLE") >= 0) msg("Le jeu n’est pas encore configuré : il manque les informations Firebase dans le fichier index.html.");
+else {
+  const app = initializeApp(C.firebase), auth = getAuth(app), fs = getFirestore(app);
+  const ref = (p) => doc(fs, ...p.split("/"));
+  const wrap = (s) => ({ exists: s.exists(), id: s.id, data: () => s.data() });
+  const mkQ = (col, cons) => ({
+    where: (f, op, v) => mkQ(col, cons.concat([where(f, op, v)])),
+    limit: (n) => mkQ(col, cons.concat([limit(n)])),
+    get: async () => { const q = await getDocs(query(collection(fs, col), ...cons)); return { docs: q.docs.map(wrap) }; },
+    onSnapshot: (cb, e) => onSnapshot(query(collection(fs, col), ...cons), (q) => cb({ docs: q.docs.map(wrap) }), e),
+  });
+  const db = { doc: (p) => ({ get: async () => wrap(await getDoc(ref(p))), set: (d) => setDoc(ref(p), d), update: (d) => updateDoc(ref(p), d), delete: () => deleteDoc(ref(p)), onSnapshot: (cb, e) => onSnapshot(ref(p), (s) => cb(wrap(s)), e) }),
+    collection: (c) => mkQ(c, []) };
+  const save = async (nom, data) => { const b = new Blob([data], { type: nom.endsWith(".csv") ? "text/csv;charset=utf-8" : "text/html;charset=utf-8" }), a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = nom; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); };
+  function connexion(texte) {
+    document.getElementById("etiquetteTour").textContent = "Connexion enseignant";
+    document.getElementById("app").innerHTML = '<section class="card" style="max-width:420px;margin:30px auto"><h2>Connexion enseignant</h2>' + (texte ? '<p style="color:var(--alert)">' + texte + '</p>' : '') +
+      '<label class="small">Courriel<input type="text" id="lg-mail" autocomplete="username" style="display:block;width:100%;margin:3px 0 10px;border:1px solid var(--line);border-radius:6px;padding:8px;background:var(--surface)"></label>' +
+      '<label class="small">Mot de passe<input type="password" id="lg-pw" autocomplete="current-password" style="display:block;width:100%;margin:3px 0 10px;border:1px solid var(--line);border-radius:6px;padding:8px;background:var(--surface)"></label>' +
+      '<button class="primary" id="lg-go">Se connecter</button><p class="small muted" style="margin-top:10px">Les étudiant·es n’ont pas besoin de se connecter : ils utilisent le lien sans #admin.</p></section>';
+    const go = () => { const m = document.getElementById("lg-mail").value.trim(), p = document.getElementById("lg-pw").value; if (!m || !p) return;
+      signInWithEmailAndPassword(auth, m, p).catch((e) => connexion(/invalid|wrong|not-found/.test(String(e.code)) ? "Courriel ou mot de passe incorrect." : "Connexion impossible (" + (e.code || "erreur") + ").")); };
+    document.getElementById("lg-go").onclick = go; document.getElementById("lg-pw").onkeydown = (e) => { if (e.key === "Enter") go(); };
+  }
+  let demarre = false;
+  onAuthStateChanged(auth, (u) => {
+    if (demarre) { location.reload(); return; }
+    const prof = !!u && !u.isAnonymous;
+    if (location.hash === "#admin" && !prof) { connexion(""); return; }
+    if (!u) { signInAnonymously(auth).catch((e) => msg("Connexion impossible (" + (e.code || "erreur") + "). Vérifie que la connexion anonyme est activée dans Firebase.")); return; }
+    demarre = true;
+    window.demarrerTransition({ db, uid: u.uid, isOwner: prof, save, logout: () => signOut(auth) });
+  });
+}
+</script>
+</body>
+</html>
